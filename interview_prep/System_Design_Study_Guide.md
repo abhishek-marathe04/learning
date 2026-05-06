@@ -1,6 +1,6 @@
 # System Design Study Guide
 > Abhishek's personal interview prep notes — updated after each study session.
-> Last updated: 2026-05-06 (Session 6 added)
+> Last updated: 2026-05-06 (Session 7 added)
 
 ---
 
@@ -12,12 +12,21 @@
 ---
 
 ## Table of Contents
+
+**Foundations**
 1. [Database Selection](#1-database-selection)
+4. [Database Principles — Battle-Hardened Rules](#4-database-principles--battle-hardened-rules)
+
+**Distributed Systems**
 2. [Distributed Systems Failure Modes](#2-distributed-systems-failure-modes)
 3. [Latency Diagnosis & Performance](#3-latency-diagnosis--performance)
-4. [Database Principles — Battle-Hardened Rules](#4-database-principles--battle-hardened-rules)
-5. [10 Interview Mistakes — What Costs You the Job](#5-10-interview-mistakes--what-costs-you-the-job)
+
+**Component Deep Dives**
 6. [Resumable File Uploads](#6-resumable-file-uploads)
+7. [Redis Persistence — Common Misconception](#7-redis-persistence--common-interview-misconception)
+
+**Interview Strategy**
+5. [10 Interview Mistakes — What Costs You the Job](#5-10-interview-mistakes--what-costs-you-the-job)
 
 ---
 
@@ -886,3 +895,86 @@ Use tus.io when you want a self-hosted, storage-agnostic solution with broad cli
 ---
 
 *— End of Session 6 —*
+
+---
+
+## 7. Redis Persistence — Common Interview Misconception
+*Session: 2026-05-06*
+
+### The interview scenario
+
+> **Interviewer:** How does Redis persist data to disk?
+> **Candidate:** "Redis is in-memory — it doesn't persist data."
+
+**The candidate is wrong.** Redis absolutely does persist data to disk. Conflating *where data lives for reads/writes* (RAM) with *no persistence at all* is the most common Redis misconception in interviews.
+
+---
+
+### The two persistence mechanisms
+
+#### RDB (Redis Database Snapshots)
+
+Point-in-time snapshots written to disk at configured intervals. Example config: "save if at least 100 keys changed in the last 5 minutes."
+
+- **Fast restarts** — a single compact binary file is loaded on startup
+- **Small file size** — compressed binary format
+- **Data loss risk** — anything since the last snapshot is lost on crash
+- **Use when:** you can tolerate minutes of data loss, need fast restarts, or want a portable backup
+
+#### AOF (Append-Only File)
+
+Every write command is logged to a file as it happens. On restart, Redis replays the log to rebuild state.
+
+- **Much more durable** — configurable to fsync every second or on every write
+- **Larger files** — stores the full command history, not just current state
+- **Slower restarts** — replaying a long AOF takes longer than loading an RDB
+- **Use when:** you need near-zero data loss and can tolerate slightly slower restarts
+
+#### AOF Rewriting
+
+Over time, AOF files grow unbounded — 100 `INCR` commands on the same key don't collapse. Redis periodically rewrites the AOF by snapshotting current state, replacing the command history with minimal equivalent commands (100 `INCR counter` → one `SET counter 100`). File shrinks; state is identical.
+
+---
+
+### Using both together
+
+Redis supports running RDB and AOF simultaneously — this is the production-recommended setup:
+- **AOF** handles durability — on crash, replay from last fsync
+- **RDB** handles fast restarts and portable backups — load the snapshot, then replay only the AOF commands that postdate it
+
+---
+
+### Persistence tradeoff table
+
+| | RDB | AOF | Both |
+|---|---|---|---|
+| Durability | Snapshot interval (minutes) | ~1 second (configurable) | ~1 second |
+| Restart speed | Fast (load one file) | Slower (replay commands) | Fast (load RDB + replay recent AOF) |
+| File size | Compact | Grows over time; rewriting keeps it manageable | Compact RDB + small recent AOF |
+| Data loss on crash | Since last snapshot | Since last fsync | Since last fsync |
+| Best for | Backups, dev environments | Production durability | Production (recommended) |
+
+---
+
+### Why this mistake happens
+
+Developers hear *"Redis is an in-memory data store"* and conflate two separate things:
+- **Primary storage location** — RAM, for read/write speed
+- **Durability** — whether data survives a restart
+
+The in-memory label describes performance characteristics, not the absence of persistence.
+
+---
+
+### What the interviewer wanted to hear
+
+The **RDB vs AOF tradeoff**:
+- RDB: faster restarts, compact files, risks more data loss
+- AOF: more durable, heavier files, slower restarts
+- Both together: the recommended production setup
+
+**The bonus point:** mention AOF rewriting. It shows you understand a real operational concern (log growth), not just the happy-path feature.
+
+---
+
+*— End of Session 7 —*
