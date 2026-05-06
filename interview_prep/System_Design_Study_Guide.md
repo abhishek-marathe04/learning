@@ -1,6 +1,6 @@
 # System Design Study Guide
 > Abhishek's personal interview prep notes — updated after each study session.
-> Last updated: 2026-05-06 (Session 5 added)
+> Last updated: 2026-05-06 (Session 6 added)
 
 ---
 
@@ -17,6 +17,7 @@
 3. [Latency Diagnosis & Performance](#3-latency-diagnosis--performance)
 4. [Database Principles — Battle-Hardened Rules](#4-database-principles--battle-hardened-rules)
 5. [10 Interview Mistakes — What Costs You the Job](#5-10-interview-mistakes--what-costs-you-the-job)
+6. [Resumable File Uploads](#6-resumable-file-uploads)
 
 ---
 
@@ -365,9 +366,9 @@ A 2KB config change OOMing pods 30 seconds after deploy means the config changed
 #### Debug toolkit
 
 ```bash
-kubectl top pods                               # live memory/CPU per pod
-kubectl describe pod <pod-name>               # OOMKilled events, configured limits
-kubectl get events --sort-by='.lastTimestamp' # recent OOM events
+kubectl top pods                                    # live memory/CPU per pod
+kubectl describe pod <pod-name>                     # OOMKilled events, configured limits
+kubectl get events --sort-by='.lastTimestamp'       # recent OOM events
 ```
 
 ```python
@@ -730,3 +731,158 @@ The interview isn't a test of whether you produce a perfect design. It's a test 
 ---
 
 *— End of Session 5 —*
+
+---
+
+## 6. Resumable File Uploads
+*Session: 2026-05-06*
+
+---
+
+### The problem
+
+User uploads 9.8 GB of a 10 GB file. Connection dies. On retry it starts from zero. This is a system design failure, not a network failure. The fix is architectural.
+
+---
+
+### The core invariant
+
+> A chunk written to object storage is permanent. The database bitset is the ledger. The gap between the two is the only work that ever needs redoing after any failure.
+
+The client never retransmits what the server already durably holds. The server never reconstructs state it already committed.
+
+---
+
+### How it works end-to-end
+
+#### Client side
+- Split file using `File.slice()` into fixed-size chunks (5–10 MB each)
+- Compute SHA-256 fingerprint of the whole file
+- Call `POST /uploads/init` → receive `uploadId`
+- Store in `localStorage`: `{ uploadId, fileHash, totalChunks, chunkSize }`
+- For each chunk, send `PUT /uploads/:id/chunk/:n` with MD5 checksum in header
+- On retry: call `GET /uploads/:id/status` → upload only the returned missing indices
+
+The client does NOT track which chunks succeeded locally. That state lives on the server.
+
+#### API layer (three endpoints, all idempotent)
+
+```
+POST /uploads/init           — create session, return uploadId
+PUT  /uploads/:id/chunk/:n   — receive chunk, verify MD5, write to S3, flip DB bit
+GET  /uploads/:id/status     — return list of missing chunk indices
+```
+
+Re-uploading the same chunk twice is always safe — same S3 key, same content, DB bit already set.
+
+#### Storage layer
+- **Object store (S3/GCS):** `uploads/{uploadId}/{n}.part` — immutable, overwrite-safe
+- **PostgreSQL/DynamoDB:** upload session record with chunk_status bitset
+- **Redis:** session TTL cache, fast bitset reads for status queries
+
+#### Assembly worker (async)
+Once all bits in the bitset are set, an async job fires:
+1. Stream-concatenate all `.part` files
+2. Verify full-file SHA-256 against the hash stored at session creation
+3. Move to final permanent path
+4. Delete all `.part` files
+
+---
+
+### Retry flow — same code path every time
+
+```python
+upload_id = localStorage.get("uploadId")
+
+if upload_id:
+    missing = GET /uploads/{upload_id}/status   # → [2, 5, 1847, ...]
+else:
+    upload_id = POST /uploads/init
+    missing = range(0, totalChunks)             # everything
+
+for chunk_index in missing:
+    data = file.slice(chunk_index * chunkSize, ...)
+    PUT /uploads/{upload_id}/chunk/{chunk_index}
+```
+
+There is no special `if connectionDropped` branch. A fresh upload and a resume are the same code path — only the contents of `missing` differ.
+
+**The missing list is not ordered and not contiguous.** With parallel uploads, chunk 2 can fail while chunks 0, 1, 3, 4 succeed. The server returns `[2]`, not `[2, 3, 4, ...]`. Treat it as an unordered set.
+
+---
+
+### Server crash guarantee
+
+Write order is always: **S3 first → DB bit second.**
+
+If the server crashes mid-write, the `.part` file exists in S3 but the DB bit is unset. On the client's next retry, the server re-receives that chunk, re-writes the `.part` (idempotent — same key, same content), and sets the bit. Nothing is lost.
+
+A startup reconciliation job can scan S3 objects whose DB bits are unset and fix them proactively.
+
+---
+
+### How MD5 is used per chunk
+
+The client computes MD5 of the chunk bytes before sending:
+
+```
+PUT /uploads/abc/chunk/2
+Content-MD5: d41d8cd98f00b204e9800998ecf8427e
+[5 MB of bytes]
+```
+
+The server recomputes MD5 of the received bytes and compares with the header. Mismatch → 400, retry this chunk only. Match → write to S3, flip bit.
+
+**Why per-chunk and not whole-file MD5?** Per-chunk catches corruption immediately and pinpoints exactly which 5 MB to retransmit. Whole-file MD5 only fires after full assembly — if anything is corrupt, you've already wasted the bandwidth and must retransmit everything.
+
+Both are used together in practice: MD5 per chunk for in-transit integrity, SHA-256 on the assembled file as the final proof of correctness.
+
+**How MD5 works internally:**
+1. Pad input to a multiple of 512 bits (64 bytes)
+2. Initialise four 32-bit state registers: A, B, C, D (fixed constants)
+3. For each 64-byte block: run 64 rounds of bit operations (AND, OR, XOR, rotate) mixing the block's bytes into A, B, C, D
+4. Add the round output back to the pre-round A, B, C, D (mod 2³²)
+5. Concatenate final A, B, C, D as hex → 32-character hash
+
+State carries forward across blocks. One flipped bit anywhere causes ~50% of hash chars to change (avalanche effect). For a 5 MB chunk, this loop runs ~80,000 times — cheap integer arithmetic in a tight loop.
+
+---
+
+### Key design decisions
+
+| Decision | Recommendation | Reasoning |
+|---|---|---|
+| Chunk size | 5–10 MB | Too small = request overhead dominates. Too big = wasted retransmission on failure. |
+| Parallelism | 3–6 concurrent chunks | More causes server backpressure and increases chance of dropped connections. |
+| Chunk integrity | MD5 per chunk | Catches in-transit corruption immediately, at the smallest retransmission unit. |
+| Final integrity | SHA-256 whole file | Proves correct assembly; catches any mix-up during concatenation. |
+| Session TTL | 7 days | Expired sessions have their `.part` files purged by a cleanup job. |
+| Client state | localStorage / IndexedDB | Survives browser refresh and tab close; only stores `uploadId`, not chunk results. |
+
+---
+
+### Off-the-shelf alternatives
+
+Rather than building this yourself:
+
+- **tus.io** — open protocol (MIT licensed), HTTP-based, client SDKs for JS, iOS, Android, Go, Java. The `Upload-Offset` header tells the server where to resume. Extensions add checksums, parallel uploads, and expiry. Reference server implementation: `tusd` (Go). Used in production at Vimeo and others.
+
+- **S3 Multipart Upload** — native AWS mechanism. Minimum 5 MB parts. Client initiates with `CreateMultipartUpload`, uploads parts with `UploadPart`, completes with `CompleteMultipartUpload`. AWS handles durability and assembly. Incomplete uploads cleaned up via lifecycle rules.
+
+- **GCS Resumable Upload API** — session URI + `Range` header handshake. Client POSTs to initiate, receives a session URI, PUTs chunks with `Content-Range`. Server tracks offset; client queries offset to resume after interruption.
+
+Use tus.io when you want a self-hosted, storage-agnostic solution with broad client support. Use S3/GCS native APIs when you're already committed to that cloud provider and want zero extra infrastructure.
+
+---
+
+### Interview tips for resumable upload questions
+
+1. **State the invariant first** — "chunk written to object store is permanent; DB is the ledger" shows you understand the core guarantee before touching any API design
+2. **Distinguish client state from server state** — client holds `uploadId` only; server owns the bitset; conflating these is the most common mistake
+3. **Mention idempotency explicitly** — re-uploading chunk N is always safe; this is what makes retries free
+4. **Address the missing list ordering** — it's an unordered set, not a resume-from-offset; parallel uploads make this non-trivial
+5. **Bring up tus.io** — shows awareness of production-grade solutions; mention it after designing from scratch, not instead of
+
+---
+
+*— End of Session 6 —*
