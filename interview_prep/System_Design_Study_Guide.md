@@ -1,6 +1,6 @@
 # System Design Study Guide
 > Abhishek's personal interview prep notes — updated after each study session.
-> Last updated: 2026-05-06 (Session 4 added)
+> Last updated: 2026-05-06 (Session 5 added)
 
 ---
 
@@ -16,6 +16,7 @@
 2. [Distributed Systems Failure Modes](#2-distributed-systems-failure-modes)
 3. [Latency Diagnosis & Performance](#3-latency-diagnosis--performance)
 4. [Database Principles — Battle-Hardened Rules](#4-database-principles--battle-hardened-rules)
+5. [10 Interview Mistakes — What Costs You the Job](#5-10-interview-mistakes--what-costs-you-the-job)
 
 ---
 
@@ -364,8 +365,8 @@ A 2KB config change OOMing pods 30 seconds after deploy means the config changed
 #### Debug toolkit
 
 ```bash
-kubectl top pods                              # live memory/CPU per pod
-kubectl describe pod <pod-name>              # OOMKilled events, configured limits
+kubectl top pods                               # live memory/CPU per pod
+kubectl describe pod <pod-name>               # OOMKilled events, configured limits
 kubectl get events --sort-by='.lastTimestamp' # recent OOM events
 ```
 
@@ -547,3 +548,185 @@ In interviews: if you propose soft deletes, an experienced interviewer will ask 
 ---
 
 *— End of Session 4 —*
+
+---
+
+## 5. 10 Interview Mistakes — What Costs You the Job
+*Session: 2026-05-06*
+
+These map to specific moments in the interview where candidates lose points without realising it. Grouped by the phase they hit.
+
+---
+
+### Phase 1: Before you draw anything — scoping
+
+#### Mistake 1: Skipping the back-of-envelope math
+
+Without numbers, every decision is a guess dressed up as a design. The math takes 3 minutes and tells you whether you need one DB or ten, whether a monolith is fine, whether caching matters.
+
+**What to calculate every time:**
+- DAU × requests/user/day = total daily requests
+- Total daily requests ÷ 86,400 = average QPS
+- Peak QPS = average × 3–10 (social apps spike hard)
+- Storage = records/day × record size × retention period
+- Bandwidth = QPS × average payload size
+
+**Example for "design Twitter":**
+- 300M DAU, 20 requests/user/day → 6B requests/day → ~70K avg QPS → ~700K peak QPS
+- That number immediately tells you: single Postgres won't hold the write path
+
+The interviewer isn't checking arithmetic. They're checking that you know numbers matter.
+
+#### Mistake 4: Ignoring the write path until 30 mins in
+
+Most candidates open with the read path because it's easy. But systems don't fail at read time — they fail at write time. The write path is where consistency, ordering, idempotency, fan-out, and durability problems live.
+
+**Force yourself to ask early:** *"What does a write look like end-to-end?"*
+- Who accepts the write?
+- Is it synchronous or does it go to a queue?
+- What guarantees — at-least-once, exactly-once?
+- What happens if the write fails halfway through?
+- Who else needs to know about this write? (fan-out, events, cache invalidation)
+
+For Twitter: posting a tweet touches the timeline service, notification service, search index, and follower fan-out — all from one write. Design only the read path and you've designed 20% of the system.
+
+---
+
+### Phase 2: Picking components — justification
+
+#### Mistake 2: Picking Postgres without justifying it
+
+Postgres is a great database. It's also the default answer when candidates haven't thought about the problem. Interviewers know this.
+
+**Instead of:** *"I'll use Postgres for user data."*
+
+**Say:** *"I'll use Postgres for user and order data — we need ACID transactions across both tables when a payment is confirmed, and our query patterns involve joins. The trade-off is horizontal scaling is harder, but at 10K QPS we won't need to shard for two years."*
+
+Same database. Completely different signal.
+
+#### Mistake 3: Saying "we'll add a cache" without saying which kind
+
+"We'll add a cache" contains five hidden decisions left blank:
+- What are you caching — full objects, query results, session data?
+- Where — in-process, sidecar, or dedicated Redis cluster?
+- What's the cache key — is it unique enough to avoid collisions?
+- What's the eviction policy — LRU, LFU, TTL?
+- What's the invalidation strategy — write-through, write-behind, cache-aside, TTL only?
+
+**The correct answer structure:** *"I'll use Redis as a cache-aside store for the product catalog — read-heavy, updated infrequently. Cache key is `product:{id}`, TTL of 5 minutes, invalidated on write via Pub/Sub. Cold start on deploy handled by a warm-up script pre-populating the top 1000 products."*
+
+#### Mistake 8: Treating "eventual consistency" as a magic word
+
+Saying "eventual consistency" to wave away a hard problem without actually solving it is worse than not saying it. The interviewer hears: *"I know the term but not what it means."*
+
+**When you say eventual consistency, you must also say:**
+- What the acceptable staleness window is ("replicas are typically 50–200ms behind")
+- What the user sees during that window ("we show optimistic updates on the client")
+- What the failure case looks like ("if a replica is partitioned >30s, we route reads to primary")
+- How you handle read-your-own-writes
+
+Eventual consistency is valid and often correct. But it needs a plan, not a hand-wave.
+
+---
+
+### Phase 3: Resilience — the layer most candidates skip
+
+#### Mistake 5: Forgetting idempotency on retries
+
+Every distributed system has retries. If your operations aren't idempotent, every retry is a potential duplicate: two charges, two OTPs, two orders, two emails.
+
+**The fix:** idempotency key pattern — client generates UUID before first attempt, reuses on retries, server caches result keyed to that UUID and replays on duplicates.
+
+**The interview trigger:** any time you mention a queue, async worker, retry policy, or webhook — immediately say *"and this operation is idempotent because..."* If you can't finish that sentence, your design has a duplicate side-effect bug.
+
+#### Mistake 6: No mention of failure modes
+
+A system design interview is partly asking: do you think about what breaks, or only about what works?
+
+**For every component you introduce, answer:**
+- What happens when this goes down? Does the whole system fail, or degrade gracefully?
+- What happens when it's slow? Does slowness propagate upstream (backpressure)?
+- What happens when it gives wrong answers? (split-brain, stale cache, partial write)
+
+**Patterns to mention:**
+- Circuit breaker — stop calling a failing downstream instead of hammering it
+- Bulkhead — isolate failures so one slow dependency doesn't exhaust all threads
+- Timeout + fallback — recommendation service down → return empty, not an error
+- Dead letter queue — failed messages don't disappear, they go somewhere inspectable
+
+You don't need to design all of these. Mentioning one with a concrete example ("if inventory service is down during checkout, I'd return a soft reservation and confirm asynchronously") shows production thinking.
+
+#### Mistake 9: Designing for steady state only, never spikes
+
+Systems don't fail at average load. They fail at the moment traffic is 10x average — a flash sale, a viral tweet, an IPL wicket, a celebrity signing up.
+
+**Ask yourself for every bottleneck:**
+- What happens at 10x QPS? Does this fall over or degrade gracefully?
+- What's the auto-scaling trigger and how long does scaling take? (EC2 takes 3–5 min — your system must survive the lag)
+- What's the queue depth limit — does it grow forever or do you shed load?
+- Do you have rate limiting at the edge? 100K unauthenticated requests should never reach your DB.
+
+**Patterns to mention for spike handling:**
+- Token bucket rate limiting at the API gateway
+- Queue-based load leveling — writes go to queue, workers consume at controlled rate
+- Read shedding — return cached/degraded responses when load exceeds threshold
+- Pre-warming — scale proactively before known spikes (scheduled events, marketing campaigns)
+
+---
+
+### Phase 4: Operability — proves you've run things in production
+
+#### Mistake 7: No mention of monitoring / SLOs
+
+A system you can't observe is a system you can't operate.
+
+**The three layers to mention:**
+
+SLIs (what you measure): error rate, p99 latency, queue depth, cache hit ratio.
+
+SLOs (your targets): *"p99 latency < 200ms, error rate < 0.1%, availability > 99.9%."* SLOs convert business requirements into engineering targets. Senior-level interviewers expect these.
+
+Alerting: alert on SLO burn rate, not individual spikes. A 5-minute spike that doesn't burn your monthly budget shouldn't wake anyone up.
+
+Tracing: for distributed systems, how do you follow a single request across services? OpenTelemetry, Jaeger, Zipkin.
+
+**The one-liner to drop in:** *"I'd instrument with OpenTelemetry, track p50/p95/p99 and error rate per endpoint, set an SLO of p99 < 300ms, and alert when the error budget burns faster than 5x the monthly rate."*
+
+---
+
+### Phase 5: Communication — the interview is a collaboration
+
+#### Mistake 10: Forgetting the interviewer is a user too — narrate
+
+Interviews are collaborative problem-solving sessions, not solo performances. Silent thinking looks like no thinking — the interviewer can't see your mental model, only what you say out loud.
+
+**What narration looks like:**
+- *"I'm going to start with the write path because that's where I expect the interesting constraints..."*
+- *"I'm not sure whether to use a queue here or do this synchronously — let me think through the trade-off..."*
+- *"This design works for steady state but I'm worried about the spike case — let me flag that and come back..."*
+- *"I'm assuming reads are 10x writes — does that match your expectation?"*
+
+That last one matters. Asking the interviewer questions isn't weakness — it's a sign that you know requirements drive design. Senior engineers ask questions constantly. Junior engineers assume and build.
+
+The interview isn't a test of whether you produce a perfect design. It's a test of whether you're someone they'd want in a design review. Narrating makes you that person.
+
+---
+
+### Quick-recall: the 10 mistakes at a glance
+
+| # | Mistake | The fix |
+|---|---|---|
+| 1 | No back-of-envelope math | Calculate DAU → QPS → storage before drawing anything |
+| 2 | Picked DB without justifying | One sentence choice + one sentence trade-off, always |
+| 3 | "We'll add a cache" | Name the type, key, eviction policy, and invalidation strategy |
+| 4 | Ignored write path | Ask "what does a write look like end-to-end?" within first 5 mins |
+| 5 | No idempotency on retries | Every async op needs an idempotency story |
+| 6 | No failure modes | Name one thing that breaks and how the system degrades |
+| 7 | No monitoring/SLOs | State your SLIs, SLOs, and alerting strategy |
+| 8 | "Eventual consistency" as magic | Specify staleness window, user experience, and read-your-writes handling |
+| 9 | Designed for steady state only | Address the 10x spike case for every bottleneck |
+| 10 | Silent thinking | Narrate your reasoning, assumptions, and trade-offs out loud |
+
+---
+
+*— End of Session 5 —*
