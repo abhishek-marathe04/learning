@@ -386,4 +386,164 @@ DB treats concurrent transactions as if they ran one at a time. Automatically ab
 
 ---
 
+## Message Queues — Scenario-Based Deep Dive
+
+---
+
+### Scenario 1: The Overloaded Checkout Service
+
+**Your e-commerce site runs fine normally. On a flash sale, 50,000 users hit "Buy" simultaneously. Your order service crashes.**
+
+**Q: How do message queues fix this?**
+
+Without a queue, every user request hits your order service directly. The service can handle maybe 500 requests/second. At 50,000 simultaneous — it falls over.
+
+With a queue:
+
+```
+Users → [Place Order API] → Queue → [Order Service workers]
+                                         (consumes at own pace)
+```
+
+The API instantly accepts every request and drops a message into the queue. Response to user: *"Your order is being processed."* The order service pulls messages off the queue at whatever rate it can handle — say 500/sec. The queue absorbs the spike. Nothing crashes. It just takes a bit longer to process during the surge.
+
+**This is the core value of a queue: decoupling the rate of production from the rate of consumption.**
+
+Producers don't care how fast consumers are. Consumers don't care how fast producers are. They're completely independent.
+
+---
+
+### Scenario 2: The Failed Payment Processor
+
+**Your order is in the queue. The payment service pulls it, tries to charge the card — and the payment gateway times out. The message is gone. The order is lost.**
+
+**Q: How do queues handle failure without losing messages?**
+
+This is where **acknowledgements (acks)** come in.
+
+A consumer doesn't delete a message just by reading it. It reads it, processes it, then explicitly sends an **ack** back to the queue saying "done, remove this." If the consumer crashes mid-processing — no ack sent — the queue re-delivers to another consumer.
+
+```
+Queue sends message → Consumer receives it
+                    → Consumer processes (payment call)
+                    → Success: sends ACK → queue deletes message
+                    → Crash/timeout: no ACK → queue re-delivers after timeout
+```
+
+This is called **at-least-once delivery**. The message will arrive at least once — possibly more if the consumer crashes after processing but before acking.
+
+**The follow-up problem**: what if the payment went through but the ack was lost? Queue re-delivers, you charge the card twice.
+
+**The fix**: make your consumer **idempotent** — processing the same message twice produces the same result as once. Store a `processed_order_ids` set. Before charging, check if this order ID was already handled.
+
+---
+
+### Scenario 3: The Notification Fan-Out
+
+**When an order is placed, you need to: send a confirmation email, update inventory, notify the warehouse, and log analytics. All of this happens synchronously in your order service. Adding a new step means changing order service code every time.**
+
+**Q: How do you architect this cleanly with queues?**
+
+This is the **pub/sub (publish-subscribe)** pattern.
+
+```
+Order Service
+     │
+     │ publishes event: "order.placed"
+     ▼
+  [Topic / Exchange]
+     │
+     ├──► Email Queue        → Email Service
+     ├──► Inventory Queue    → Inventory Service
+     ├──► Warehouse Queue    → Warehouse Service
+     └──► Analytics Queue    → Analytics Service
+```
+
+The order service publishes one event. The broker fans it out to every subscriber. Each service has its own queue — they consume independently, at their own pace, and failures in one don't affect the others.
+
+**The key win**: the order service doesn't know or care who's listening. Tomorrow you add a loyalty points service — just subscribe it to `order.placed`. Zero changes to the order service. This is loose coupling at the architecture level.
+
+RabbitMQ calls this an **exchange**. Kafka calls the central log a **topic**. Different implementations, same concept.
+
+---
+
+### Scenario 4: The Poison Message
+
+**One specific order message keeps crashing your consumer. It gets re-delivered, crashes again, re-delivered again — infinite loop. Your queue is stuck and real orders aren't being processed.**
+
+**Q: How do you handle a message that can never be successfully processed?**
+
+This is a **poison message** — a malformed or unprocessable message that kills every consumer that touches it.
+
+The fix is a **Dead Letter Queue (DLQ)**.
+
+```
+Main Queue → Consumer crashes → retry (attempt 2)
+                             → Consumer crashes → retry (attempt 3)
+                             → Consumer crashes → move to DLQ
+```
+
+After N failed attempts (typically 3–5, you configure the threshold), the message is moved out of the main queue into a Dead Letter Queue. Normal processing continues unblocked.
+
+The DLQ is handled separately:
+- Engineer inspects the messages to find the bug
+- Fix the bug and replay messages back into the main queue
+- Or discard them if genuinely corrupt
+
+Without a DLQ, one bad message halts an entire queue indefinitely. With one, poison messages are isolated and the system degrades gracefully.
+
+---
+
+### Scenario 5: The Ordering Problem
+
+**You're processing bank transactions from a queue: deposit ₹1000, withdraw ₹1500, deposit ₹200. If processed out of order — withdraw before deposit — the account goes negative and the transaction is incorrectly rejected.**
+
+**Q: How do you guarantee message ordering in a queue?**
+
+Standard queues with multiple consumers don't guarantee order. Messages can arrive out of sequence, especially with retries and parallel consumers.
+
+**Option 1: Single consumer**
+One consumer, one queue, processes serially. Order guaranteed. Throughput limited. Fine for low-volume use cases.
+
+**Option 2: Partition by key (Kafka's approach)**
+
+```
+Transactions for Account A → Partition 1 → Consumer 1
+Transactions for Account B → Partition 2 → Consumer 2
+Transactions for Account C → Partition 3 → Consumer 3
+```
+
+Kafka partitions a topic by a key (e.g. `account_id`). All messages for the same key always go to the same partition, consumed by the same consumer, in order. You get parallelism across accounts while preserving order within each account.
+
+**Option 3: Sequence numbers + reorder buffer**
+Each message carries a sequence number. Consumer buffers out-of-order messages and waits for the missing one before processing. Complex to implement — usually better to fix at the infrastructure level.
+
+---
+
+### When to Reach for a Queue
+
+| Signal | Queue solves it |
+|---|---|
+| Producer is faster than consumer | Buffer the spike — queue absorbs it |
+| A task can be done asynchronously | Don't block the user — queue it |
+| Multiple services need the same event | Pub/sub fan-out |
+| A step can fail and must be retried | Ack + re-delivery |
+| You want services to not know about each other | Queue as the contract between them |
+
+---
+
+### Concept Cheat Sheet
+
+| Concept | What it means |
+|---|---|
+| Queue | Buffer between producer and consumer |
+| Ack | Consumer's receipt — message deleted only after this |
+| At-least-once delivery | Message guaranteed to arrive, may arrive twice — make consumers idempotent |
+| Idempotency | Processing the same message twice = same result as once |
+| Pub/Sub | One event, many subscribers — loose coupling |
+| Dead Letter Queue | Isolation ward for poison messages |
+| Partition | Ordering guarantee within a key, parallelism across keys |
+
+---
+
 *System Design Prep series — Abhishek Marathe*
