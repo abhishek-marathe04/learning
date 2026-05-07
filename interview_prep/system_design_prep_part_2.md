@@ -2,6 +2,21 @@
 
 ---
 
+## Table of Contents
+
+1. [100GB log file — find duplicate URLs with 1GB RAM](#q-given-a-100gb-log-file-of-urls-find-all-duplicate-urls-using-only-1gb-of-ram)
+2. [Why not store everything in cache?](#q-if-cache-is-faster-than-db-why-not-store-everything-in-cache)
+3. [REST vs GraphQL — when to pick which?](#q-whats-the-difference-between-rest-and-graphql-why-would-you-pick-one-over-the-other)
+4. [Inventory race condition — prevent overselling](#q-two-transactions-read-inventory--1-simultaneously-both-allow-a-purchase-youve-now-sold-something-you-dont-have-how-do-you-prevent-this)
+5. [Message Queues — Scenario-Based Deep Dive](#message-queues--scenario-based-deep-dive)
+   - [Scenario 1: Overloaded Checkout Service](#scenario-1-the-overloaded-checkout-service)
+   - [Scenario 2: Failed Payment Processor](#scenario-2-the-failed-payment-processor)
+   - [Scenario 3: Notification Fan-Out](#scenario-3-the-notification-fan-out)
+   - [Scenario 4: Poison Message](#scenario-4-the-poison-message)
+   - [Scenario 5: Ordering Problem](#scenario-5-the-ordering-problem)
+
+---
+
 ## Q: Given a 100GB log file of URLs, find all duplicate URLs using only 1GB of RAM.
 
 ### The Core Constraint
