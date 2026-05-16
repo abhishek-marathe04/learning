@@ -1,0 +1,5 @@
+{
+  "team_preferences": "Always put breaking changes first. Use emoji section headers. One line per item.",
+  "last_release_version": "v2.1.0",
+  "known_issues": "The /v1/auth removal was announced in v2.1.0 — reference this when it appears."
+}
