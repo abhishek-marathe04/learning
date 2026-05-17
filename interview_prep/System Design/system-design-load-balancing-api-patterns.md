@@ -37,7 +37,7 @@ Think of it as solving **three fundamental problems simultaneously**:
 
 1. **Scalability** — A single server can handle ~10K-100K connections. Beyond that, you need horizontal scaling, which is impossible without something distributing the work.
 2. **Availability** — If one server dies, traffic should automatically route around it. The LB is the failover mechanism.
-3. **Abstraction** — Clients see ONE endpoint (`api.telstra.com`). The fact that there are 50 servers behind it is hidden. This decoupling is enormous — you can add/remove servers without clients knowing.
+3. **Abstraction** — Clients see ONE endpoint (`api.google.com`). The fact that there are 50 servers behind it is hidden. This decoupling is enormous — you can add/remove servers without clients knowing.
 
 ### The Architectural Position
 
