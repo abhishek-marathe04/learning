@@ -70,12 +70,10 @@ def run(
             delta = choice.get("delta", {})
             finish_reason = choice.get("finish_reason") or finish_reason
 
-            # Accumulate text content
+            # Accumulate text content (don't emit yet — wait to see if tool calls follow)
             text_delta = delta.get("content")
             if text_delta:
                 accumulated_text += text_delta
-                # Stream thought tokens to UI in real time
-                on_event(AgentEvent(type="thought", content=accumulated_text))
 
             # Accumulate tool calls (may arrive in fragments)
             tool_calls_delta = delta.get("tool_calls", [])
@@ -104,6 +102,10 @@ def run(
         print(f"[AGENT] finish_reason={finish_reason}  tool_calls={len(tool_calls)}  text_len={len(accumulated_text)}")
 
         if has_tool_calls:
+            # Emit thought only when intermediate reasoning precedes tool calls
+            if accumulated_text:
+                on_event(AgentEvent(type="thought", content=accumulated_text))
+
             # Append the assistant message with tool calls
             messages.append({
                 "role": "assistant",
