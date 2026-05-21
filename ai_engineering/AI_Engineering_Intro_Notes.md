@@ -26,7 +26,7 @@ Ten topics, roughly in the order you'd encounter them building a real AI feature
 | 03 | When NOT to Use Them | The most under-discussed topic in AI |
 | 04 | Your First LLM Call | Get something running immediately |
 | 05 | What is an AI Agent? | The architecture behind most real products |
-| 06 | How Agents Think | Chain of thought, reasoning models |
+| 06 | How Models Reason | Chain of thought, reasoning models |
 | 07 | The ReAct Pattern | The core reasoning loop |
 | 08 | Tools & Function Calling | How agents interact with the world |
 | 09 | Memory & RAG | Making LLMs know your data |
@@ -287,39 +287,75 @@ Think of an agent as an employee:
 
 ---
 
-## Slide 10 — How Agents Think
+## Slide 10 — How Models Reason
 
-### Chain of Thought (CoT)
+> **Note on title:** "How Agents Think" is a slight misnomer — this is really about how the *model* inside an agent reasons. Agents don't have their own thinking mechanism; they use the model as their reasoning engine. Consider renaming the slide to "How Models Reason" or "The Reasoning Layer."
 
-Before answering, the model "thinks out loud." This isn't a separate training mode — it's just instructing the model to write its reasoning before its final answer.
+### Why this slide exists here
 
-**Example:**
+You've just explained what an agent *is*. Before showing the ReAct loop, the audience needs to understand that the LLM inside an agent can reason step-by-step — otherwise the loop feels like magic. The sequence is: What is an agent? → How does the model inside it reason? → How does that reasoning drive a loop?
+
+### Two flavors of Chain of Thought
+
+**1. Prompted CoT — works with any model**
+
+You instruct the model to think step by step in your prompt. The reasoning appears inline in the normal text response — it is not a separate field.
+
 ```
-User:  What's 17 × 24?
+Prompt:  "Think step by step before answering. What's 17 × 24?"
 
-Model (thinking): Let me break this down.
-  17 × 20 = 340
-  17 × 4  = 68
-  340 + 68 = 408
-
-Answer: 408
+Response (type: "text"):
+  "Let me break this down.
+   17 × 20 = 340
+   17 × 4  = 68
+   340 + 68 = 408
+   Answer: 408"
 ```
 
-Why this matters in agents: the model's reasoning becomes visible, debuggable, and often catches its own errors before committing to an action.
+The technique is model-agnostic. The quality scales with the model — a stronger model reasons more reliably, but the prompt itself works anywhere.
 
-### Reasoning / Extended Thinking Models
+**2. Extended Thinking — only on supported models**
 
-Modern models like **Claude 3.7 Sonnet** (with extended thinking), **o1**, and **o3** have dedicated "thinking budgets" — a pool of tokens spent on internal reasoning before generating the visible response.
+Models like **Claude 3.7 Sonnet** (with extended thinking enabled), **o1**, and **o3** are trained to spend a dedicated token budget on internal reasoning before generating the visible response. This is not just prompted CoT — it is a trained capability that requires explicit enablement via the API.
 
-| Model Type | Best For |
-|------------|---------|
-| Standard (fast) | Simple tasks, extraction, generation, low-latency needs |
-| Reasoning (extended thinking) | Complex planning, multi-step debugging, ambiguous tasks, math |
+When extended thinking is active, the API returns a **separate content block** of `type: "thinking"`:
+
+```python
+response.content = [
+    {
+        "type": "thinking",
+        "thinking": "Let me break this down..."  # reasoning — separate field
+    },
+    {
+        "type": "text",
+        "text": "408"                            # final answer
+    }
+]
+
+# Access independently
+for block in response.content:
+    if block.type == "thinking":
+        print(block.thinking)   # the reasoning
+    elif block.type == "text":
+        print(block.text)       # the answer
+```
+
+This structured separation is what makes it useful for debugging — you can log reasoning without parsing it out of the response text.
+
+### When to use which
+
+| Situation | Approach |
+|-----------|---------|
+| Simple agent tasks (routing, extraction, classification) | Prompted CoT on a standard model |
+| Complex planning, multi-step debugging, ambiguous tasks | Extended thinking on a reasoning model |
+| Latency-sensitive, high-volume | Standard model, skip CoT or keep it brief |
+
+**One line for the slide:** *"The prompt works anywhere — the model determines how well it thinks."*
 
 **Practical guidance:**
 - Extended thinking tokens cost more but produce substantially better results on hard problems
-- You can often inspect the thinking in API responses — useful for debugging
 - Don't use reasoning mode for simple tasks — it's like using a sledgehammer to hang a picture
+- The `thinking` block in the API response is only present when extended thinking is explicitly enabled — it is not a general feature of all models
 
 ---
 
