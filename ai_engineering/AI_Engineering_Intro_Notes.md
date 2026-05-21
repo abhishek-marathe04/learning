@@ -29,8 +29,10 @@ Ten topics, roughly in the order you'd encounter them building a real AI feature
 | 06 | How Models Reason | Chain of thought, reasoning models |
 | 07 | The ReAct Pattern | The core reasoning loop |
 | 08 | Tools & Function Calling | How agents interact with the world |
-| 09 | Memory & RAG | Making LLMs know your data |
-| 10 | The Stack & Next Steps | Big picture + practical roadmap |
+| 09 | Building a Simple Agent | Putting it all together |
+| — | 🎬 Demo | Live agent in action |
+| 10 | Model Context Protocol | Standardising tool integrations |
+| 11 | Memory & RAG | Making LLMs know your data |
 
 ---
 
@@ -439,50 +441,7 @@ A tool is a function your code exposes to the LLM. The model can decide to call 
 
 ---
 
-## Slide 13 — Model Context Protocol (MCP)
-
-### What is MCP?
-
-Model Context Protocol is an **open standard** (created by Anthropic, now broadly adopted) that standardises how AI applications connect to external tools and data sources.
-
-Before MCP, every AI tool integration was custom: different SDKs, different APIs, different authentication. MCP gives the ecosystem a common language — like HTTP did for the web.
-
-### What an MCP Server exposes
-
-| Capability | Description |
-|-----------|------------|
-| **Tools** | Callable functions — search the web, write a file, query a database, call an API |
-| **Resources** | Read-only data the model can access — file contents, DB rows, API responses |
-| **Prompts** | Reusable prompt templates for consistent, structured interactions |
-
-### How it works
-
-```
-Your App (LLM Agent)
-    └── MCP Client (built into your app or SDK)
-            ↕  JSON-RPC  (over stdio or HTTP/SSE)
-    MCP Server
-        ├── Tools
-        ├── Resources
-        └── Prompts
-            ↓
-    External Systems (GitHub, Database, Filesystem, Slack...)
-```
-
-### Why this matters for us
-
-Instead of building a custom tool integration for every service, you:
-1. Find or build an MCP server for that service once
-2. Connect any MCP-compatible AI app to it
-3. The model automatically discovers and uses the available tools
-
-**Existing MCP servers:** GitHub, PostgreSQL, Filesystem, Slack, Brave Search, and hundreds more from the community.
-
-> Think of MCP as USB for AI tools — any MCP server plugs into any MCP-compatible application.
-
----
-
-## Slide 14 — Building a Simple Agent
+## Slide 13 — Building a Simple Agent
 
 ### The agent loop
 
@@ -538,6 +497,60 @@ When given a task:
 
 If you are unsure, ask for clarification rather than guessing.
 ```
+
+---
+
+## 🎬 Demo — Live Agent
+
+> **Transition note:** "Let's see everything we just covered — ReAct loop, tools, agent loop — running live."
+
+- Run the Streamlit demo (`streamlit run app.py` in `/ai_engineering/demo/`)
+- Show a multi-step task so the audience sees THOUGHT → ACTION → OBSERVATION in real time
+- Point out the tool calls and observations as they happen
+- ~5 minutes
+
+---
+
+## Slide 14 — Model Context Protocol (MCP)
+
+### What is MCP?
+
+Model Context Protocol is an **open standard** (created by Anthropic, now broadly adopted) that standardises how AI applications connect to external tools and data sources.
+
+Before MCP, every AI tool integration was custom: different SDKs, different APIs, different authentication. MCP gives the ecosystem a common language — like HTTP did for the web.
+
+### What an MCP Server exposes
+
+| Capability | Description |
+|-----------|------------|
+| **Tools** | Callable functions — search the web, write a file, query a database, call an API |
+| **Resources** | Read-only data the model can access — file contents, DB rows, API responses |
+| **Prompts** | Reusable prompt templates for consistent, structured interactions |
+
+### How it works
+
+```
+Your App (LLM Agent)
+    └── MCP Client (built into your app or SDK)
+            ↕  JSON-RPC  (over stdio or HTTP/SSE)
+    MCP Server
+        ├── Tools
+        ├── Resources
+        └── Prompts
+            ↓
+    External Systems (GitHub, Database, Filesystem, Slack...)
+```
+
+### Why this matters for us
+
+Instead of building a custom tool integration for every service, you:
+1. Find or build an MCP server for that service once
+2. Connect any MCP-compatible AI app to it
+3. The model automatically discovers and uses the available tools
+
+**Existing MCP servers:** GitHub, PostgreSQL, Filesystem, Slack, Brave Search, and hundreds more from the community.
+
+> Think of MCP as USB for AI tools — any MCP server plugs into any MCP-compatible application.
 
 ---
 
