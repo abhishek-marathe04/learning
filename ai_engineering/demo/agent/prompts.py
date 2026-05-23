@@ -22,9 +22,9 @@ Before writing the release notes, reason step by step:
 Write your reasoning before producing the final output."""
 
 MEMORY_ADDITION = """
-You have access to past release notes via the get_past_release_notes tool. Check the previous release before writing to:
-- Maintain consistent format and tone
-- Reference continuations of previous work where relevant
+You have been given team preferences and context above. Use them to:
+- Follow the team's preferred format and tone exactly
+- Reference known issues or past versions where relevant
 - Avoid re-announcing features already shipped"""
 
 
