@@ -6,12 +6,11 @@ import streamlit as st
 from agent.tools import TOOL_DEFINITIONS
 
 
-def render_inspector(system_prompt: str, tools_enabled: bool, messages: list[dict]) -> None:
+def render_inspector(system_prompt: str, tools_enabled: bool) -> None:
     """
-    Renders three expanders:
+    Renders two expanders:
     1. System Prompt
     2. Tool Definitions
-    3. Messages
     """
     with st.expander("System Prompt", expanded=True):
         st.code(system_prompt, language="text")
@@ -27,8 +26,3 @@ def render_inspector(system_prompt: str, tools_enabled: bool, messages: list[dic
         else:
             st.info("Tools are disabled")
 
-    with st.expander("Messages", expanded=False):
-        if messages:
-            st.json(messages)
-        else:
-            st.caption("No messages yet — run the agent to see the conversation history.")

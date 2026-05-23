@@ -17,9 +17,6 @@ if "events" not in st.session_state:
 if "running" not in st.session_state:
     st.session_state.running = False
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
 if "system_prompt" not in st.session_state:
     st.session_state.system_prompt = build_system_prompt(
         cot_enabled=False, memory_enabled=False
@@ -46,7 +43,6 @@ with inspector_tab:
     render_inspector(
         system_prompt=st.session_state.system_prompt,
         tools_enabled=controls["tools_enabled"],
-        messages=st.session_state.messages,
     )
 
 # --- Agent Trace tab ---
@@ -54,7 +50,6 @@ with trace_tab:
     if controls["run_clicked"] and not st.session_state.running:
         # Reset state for a new run
         st.session_state.events = []
-        st.session_state.messages = []
         st.session_state.running = True
 
         task = (
