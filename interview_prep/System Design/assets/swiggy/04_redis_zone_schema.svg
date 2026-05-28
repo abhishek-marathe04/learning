@@ -1,0 +1,94 @@
+<svg width="100%" viewBox="0 0 680 620" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Redis zone-based schema and shard topology</title>
+<desc>Three-part diagram showing key naming conventions, pipeline read pattern, and how shards map to city zones.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <style>
+    text { font-family: system-ui, -apple-system, sans-serif; fill: #1a1a1a; }
+    .th  { font-size: 14px; font-weight: 600; }
+    .ts  { font-size: 12px; fill: #444; }
+    .sec { font-size: 13px; font-weight: 600; fill: #666; }
+    .box-amber  { fill: #faeeda; stroke: #854f0b; }
+    .box-teal   { fill: #e1f5ee; stroke: #0f6e56; }
+    .box-purple { fill: #eeedfe; stroke: #534ab7; }
+    .box-coral  { fill: #faece7; stroke: #993c1d; }
+    .box-gray   { fill: #f1efe8; stroke: #5f5e5a; }
+    .box-blue   { fill: #e6f1fb; stroke: #185fa5; }
+    .box-outline { fill: none; stroke: #ccc; }
+  </style>
+</defs>
+
+<!-- SECTION 1: Key schema -->
+<text class="sec" x="40" y="36">Key schema</text>
+
+<rect class="box-amber" x="40" y="48" width="590" height="44" rx="6" stroke-width="0.5"/>
+<text class="th" x="56" y="66" fill="#633806">surge:{city}:{zone_id}</text>
+<text class="ts" x="56" y="82" fill="#854f0b">→  "1.4"   TTL 35s   (string, float encoded)</text>
+
+<rect class="box-teal" x="40" y="100" width="590" height="44" rx="6" stroke-width="0.5"/>
+<text class="th" x="56" y="118" fill="#085041">eta:{restaurant_id}</text>
+<text class="ts" x="56" y="134" fill="#0f6e56">→  "28"   TTL 35s   (string, minutes as integer)</text>
+
+<rect class="box-purple" x="40" y="152" width="590" height="44" rx="6" stroke-width="0.5"/>
+<text class="th" x="56" y="170" fill="#3c3489">stock:{restaurant_id}:{item_id}</text>
+<text class="ts" x="56" y="186" fill="#534ab7">→  "14"   TTL 35s   (string, count as integer)</text>
+
+<rect class="box-coral" x="40" y="204" width="590" height="44" rx="6" stroke-width="0.5"/>
+<text class="th" x="56" y="222" fill="#712b13">zone:{city}:{zone_id}:restaurants</text>
+<text class="ts" x="56" y="238" fill="#993c1d">→  [rest_4821, rest_4822, …]   TTL 300s   (set, stable index, longer TTL)</text>
+
+<!-- SECTION 2: Pipeline read -->
+<text class="sec" x="40" y="280">App-open read — single pipeline (1 RTT for 40 restaurants)</text>
+
+<rect class="box-gray" x="40" y="294" width="178" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="129" y="318" text-anchor="middle" fill="#444441">App server</text>
+<text class="ts" x="129" y="337" text-anchor="middle">1. SMEMBERS zone key</text>
+<text class="ts" x="129" y="353" text-anchor="middle">2. Build pipeline</text>
+<text class="ts" x="129" y="369" text-anchor="middle">3. Send all GETs</text>
+
+<line x1="220" y1="342" x2="258" y2="342" stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<text class="ts" x="238" y="335" text-anchor="middle" fill="#888">batch</text>
+
+<rect class="box-amber" x="260" y="294" width="178" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="349" y="318" text-anchor="middle" fill="#633806">Redis shard</text>
+<text class="ts" x="349" y="337" text-anchor="middle" fill="#854f0b">surge:BLR:14 → 1.4</text>
+<text class="ts" x="349" y="353" text-anchor="middle" fill="#854f0b">eta:4821 → 28</text>
+<text class="ts" x="349" y="369" text-anchor="middle" fill="#854f0b">stock:4821:109 → 14</text>
+
+<line x1="440" y1="342" x2="478" y2="342" stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<text class="ts" x="458" y="335" text-anchor="middle" fill="#888">~2ms</text>
+
+<rect class="box-teal" x="480" y="294" width="150" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="555" y="318" text-anchor="middle" fill="#085041">Response</text>
+<text class="ts" x="555" y="337" text-anchor="middle" fill="#0f6e56">All 40 restaurants</text>
+<text class="ts" x="555" y="353" text-anchor="middle" fill="#0f6e56">surge + eta + stock</text>
+<text class="ts" x="555" y="369" text-anchor="middle" fill="#0f6e56">in 1 round-trip</text>
+
+<!-- SECTION 3: Shard topology -->
+<text class="sec" x="40" y="426">Shard topology — partitioned by city prefix</text>
+
+<rect class="box-blue" x="40"  y="440" width="174" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="127" y="462" text-anchor="middle" fill="#0c447c">Shard A</text>
+<text class="ts" x="127" y="480" text-anchor="middle" fill="#185fa5">BLR:* keys</text>
+<text class="ts" x="127" y="496" text-anchor="middle" fill="#185fa5">Bengaluru zones</text>
+<text class="ts" x="127" y="512" text-anchor="middle" fill="#185fa5">~18 zones</text>
+
+<rect class="box-blue" x="254" y="440" width="172" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="462" text-anchor="middle" fill="#0c447c">Shard B</text>
+<text class="ts" x="340" y="480" text-anchor="middle" fill="#185fa5">MUM:* keys</text>
+<text class="ts" x="340" y="496" text-anchor="middle" fill="#185fa5">Mumbai zones</text>
+<text class="ts" x="340" y="512" text-anchor="middle" fill="#185fa5">~22 zones</text>
+
+<rect class="box-blue" x="466" y="440" width="174" height="96" rx="8" stroke-width="0.5"/>
+<text class="th" x="553" y="462" text-anchor="middle" fill="#0c447c">Shard C</text>
+<text class="ts" x="553" y="480" text-anchor="middle" fill="#185fa5">DEL:* HYD:* CHE:*</text>
+<text class="ts" x="553" y="496" text-anchor="middle" fill="#185fa5">Other cities</text>
+<text class="ts" x="553" y="512" text-anchor="middle" fill="#185fa5">~30 zones</text>
+
+<!-- Bottom note -->
+<rect class="box-outline" x="40" y="558" width="590" height="44" rx="6" stroke-width="0.5"/>
+<text class="ts" x="335" y="576" text-anchor="middle" fill="#666">Keys for the same zone always land on the same shard — no cross-shard fan-out on a pipeline read.</text>
+<text class="ts" x="335" y="592" text-anchor="middle" fill="#666">Hash tags {BLR} force consistent routing in Redis Cluster mode.</text>
+</svg>

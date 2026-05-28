@@ -1,0 +1,78 @@
+<svg width="100%" viewBox="0 0 680 560" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>CDN edge nodes and real-time data flow</title>
+<desc>Diagram showing how CDN edge nodes in Mumbai and Bangalore serve static content locally while only dynamic real-time data travels back to origin infrastructure.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <style>
+    text { font-family: system-ui, -apple-system, sans-serif; fill: #1a1a1a; }
+    .th { font-size: 14px; font-weight: 600; }
+    .ts { font-size: 12px; fill: #444; }
+    .box-purple { fill: #eeedfe; stroke: #534ab7; }
+    .box-teal   { fill: #e1f5ee; stroke: #0f6e56; }
+    .box-blue   { fill: #e6f1fb; stroke: #185fa5; }
+    .box-green  { fill: #eaf3de; stroke: #3b6d11; }
+  </style>
+</defs>
+
+<!-- Origin cluster -->
+<rect class="box-purple" x="230" y="30" width="220" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="54" text-anchor="middle" fill="#3c3489">Origin cluster</text>
+<text class="ts" x="340" y="72" text-anchor="middle" fill="#534ab7">WebSocket + Redis + Kafka</text>
+
+<!-- Edge: Mumbai -->
+<rect class="box-teal" x="60" y="200" width="200" height="100" rx="10" stroke-width="0.5"/>
+<text class="th" x="160" y="225" text-anchor="middle" fill="#085041">Edge — Mumbai</text>
+<text class="ts" x="160" y="244" text-anchor="middle" fill="#0f6e56">JS/CSS bundles</text>
+<text class="ts" x="160" y="261" text-anchor="middle" fill="#0f6e56">Restaurant images, menus</text>
+<text class="ts" x="160" y="278" text-anchor="middle" fill="#0f6e56">Last-seen surge (stale-OK)</text>
+
+<!-- Edge: Bengaluru -->
+<rect class="box-teal" x="420" y="200" width="200" height="100" rx="10" stroke-width="0.5"/>
+<text class="th" x="520" y="225" text-anchor="middle" fill="#085041">Edge — Bengaluru</text>
+<text class="ts" x="520" y="244" text-anchor="middle" fill="#0f6e56">JS/CSS bundles</text>
+<text class="ts" x="520" y="261" text-anchor="middle" fill="#0f6e56">Restaurant images, menus</text>
+<text class="ts" x="520" y="278" text-anchor="middle" fill="#0f6e56">Last-seen surge (stale-OK)</text>
+
+<!-- Users Mumbai -->
+<rect class="box-blue" x="70"  y="390" width="80" height="36" rx="6" stroke-width="0.5"/>
+<text class="ts" x="110" y="412" text-anchor="middle" fill="#185fa5">Mumbai</text>
+<rect class="box-blue" x="170" y="390" width="80" height="36" rx="6" stroke-width="0.5"/>
+<text class="ts" x="210" y="412" text-anchor="middle" fill="#185fa5">Pune</text>
+
+<!-- Users Bengaluru -->
+<rect class="box-blue" x="430" y="390" width="80" height="36" rx="6" stroke-width="0.5"/>
+<text class="ts" x="470" y="412" text-anchor="middle" fill="#185fa5">Bengaluru</text>
+<rect class="box-blue" x="530" y="390" width="80" height="36" rx="6" stroke-width="0.5"/>
+<text class="ts" x="570" y="412" text-anchor="middle" fill="#185fa5">Hyderabad</text>
+
+<!-- Users → Edge (green = local, fast) -->
+<line x1="130" y1="388" x2="148" y2="302" stroke="#3B6D11" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="210" y1="388" x2="198" y2="302" stroke="#3B6D11" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="470" y1="388" x2="478" y2="302" stroke="#3B6D11" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="570" y1="388" x2="562" y2="302" stroke="#3B6D11" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+
+<!-- Edge → Origin (dashed = only WS upgrade) -->
+<path d="M160 198 L270 88" fill="none" stroke="#7F77DD" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+<path d="M520 198 L410 88" fill="none" stroke="#7F77DD" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+
+<!-- Arrow labels -->
+<text class="ts" x="108" y="356" text-anchor="middle" fill="#3B6D11">static assets</text>
+<text class="ts" x="108" y="371" text-anchor="middle" fill="#3B6D11">~5ms, free</text>
+<text class="ts" x="572" y="356" text-anchor="middle" fill="#3B6D11">static assets</text>
+<text class="ts" x="572" y="371" text-anchor="middle" fill="#3B6D11">~5ms, free</text>
+<text class="ts" x="192" y="152" text-anchor="middle" fill="#534AB7">WS upgrade only</text>
+<text class="ts" x="192" y="167" text-anchor="middle" fill="#534AB7">~40ms, low volume</text>
+<text class="ts" x="488" y="152" text-anchor="middle" fill="#534AB7">WS upgrade only</text>
+<text class="ts" x="488" y="167" text-anchor="middle" fill="#534AB7">~40ms, low volume</text>
+
+<!-- Cache hit rate badge -->
+<rect class="box-green" x="258" y="430" width="164" height="44" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="449" text-anchor="middle" fill="#27500A">~90% cache hit rate</text>
+<text class="ts" x="340" y="465" text-anchor="middle" fill="#3b6d11">origin sees 10% of requests</text>
+
+<!-- Bottom annotations -->
+<text class="ts" x="340" y="516" text-anchor="middle" fill="#888">Real-time data (ETA, surge, stock) travels via WebSocket — not HTTP cache</text>
+<text class="ts" x="340" y="534" text-anchor="middle" fill="#888">Edge node only caches the app shell and stale-while-revalidate snapshots</text>
+</svg>

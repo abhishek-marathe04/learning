@@ -1,0 +1,152 @@
+<svg width="100%" viewBox="0 0 680 820" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Swiggy IPL Finals — Real-time Data Architecture</title>
+<desc>System architecture showing how Swiggy serves 3 million concurrent users with real-time delivery estimates, stock, and surge pricing using multi-tier caching and push-based updates.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <style>
+    text { font-family: system-ui, -apple-system, sans-serif; fill: #1a1a1a; }
+    .th { font-size: 14px; font-weight: 600; }
+    .ts { font-size: 12px; font-weight: 400; fill: #444; }
+    .tier-label { font-size: 11px; fill: #888; }
+    .box-gray { fill: #f1efe8; stroke: #5f5e5a; }
+    .box-purple { fill: #eeedfe; stroke: #534ab7; }
+    .box-amber { fill: #faeeda; stroke: #854f0b; }
+    .box-teal { fill: #e1f5ee; stroke: #0f6e56; }
+    .box-coral { fill: #faece7; stroke: #993c1d; }
+    .box-blue { fill: #e6f1fb; stroke: #185fa5; }
+    .box-red { fill: #fcebeb; stroke: #a32d2d; }
+    .teal-inner { fill: none; stroke: #0f6e56; }
+    .teal-text { fill: #085041; }
+    .teal-sub { fill: #0f6e56; }
+    .arr { stroke: #888; stroke-width: 1.2; fill: none; }
+  </style>
+</defs>
+
+<!-- TIER LABELS -->
+<text class="tier-label" x="36" y="95" text-anchor="middle" transform="rotate(-90,36,95)">Data layer</text>
+<text class="tier-label" x="36" y="265" text-anchor="middle" transform="rotate(-90,36,265)">Compute</text>
+<text class="tier-label" x="36" y="440" text-anchor="middle" transform="rotate(-90,36,440)">Cache</text>
+<text class="tier-label" x="36" y="610" text-anchor="middle" transform="rotate(-90,36,610)">Delivery</text>
+<text class="tier-label" x="36" y="750" text-anchor="middle" transform="rotate(-90,36,750)">Clients</text>
+
+<!-- TIER 1: Databases -->
+<rect class="box-gray" x="60" y="48" width="140" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="130" y="72" text-anchor="middle">PostgreSQL</text>
+<text class="ts" x="130" y="90" text-anchor="middle">Orders, restaurants</text>
+
+<rect class="box-gray" x="230" y="48" width="140" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="300" y="72" text-anchor="middle">MongoDB</text>
+<text class="ts" x="300" y="90" text-anchor="middle">Menu, stock catalog</text>
+
+<rect class="box-gray" x="400" y="48" width="160" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="480" y="72" text-anchor="middle">TimescaleDB</text>
+<text class="ts" x="480" y="90" text-anchor="middle">Demand signals, surge</text>
+
+<!-- divider -->
+<line x1="55" y1="136" x2="625" y2="136" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+<!-- TIER 2: Compute -->
+<rect class="box-purple" x="60" y="156" width="160" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="140" y="180" text-anchor="middle" style="fill:#3c3489">Pricing engine</text>
+<text class="ts" x="140" y="198" text-anchor="middle" style="fill:#534ab7">Surge calc every 30s</text>
+
+<rect class="box-purple" x="250" y="156" width="160" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="330" y="180" text-anchor="middle" style="fill:#3c3489">ETA engine</text>
+<text class="ts" x="330" y="198" text-anchor="middle" style="fill:#534ab7">Delivery estimates</text>
+
+<rect class="box-purple" x="440" y="156" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="515" y="180" text-anchor="middle" style="fill:#3c3489">Stock tracker</text>
+<text class="ts" x="515" y="198" text-anchor="middle" style="fill:#534ab7">Inventory sync</text>
+
+<!-- Compute → Kafka arrows -->
+<line x1="140" y1="212" x2="140" y2="250" stroke="#7f77dd" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="330" y1="212" x2="330" y2="250" stroke="#7f77dd" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="515" y1="212" x2="515" y2="250" stroke="#7f77dd" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+
+<!-- Kafka bus -->
+<rect class="box-amber" x="60" y="250" width="530" height="44" rx="8" stroke-width="0.5"/>
+<text class="th" x="325" y="268" text-anchor="middle" style="fill:#633806">Kafka event bus</text>
+<text class="ts" x="325" y="284" text-anchor="middle" style="fill:#854f0b">pricing.updates · eta.updates · stock.updates — partitioned by city zone</text>
+
+<!-- divider -->
+<line x1="55" y1="322" x2="625" y2="322" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+<!-- TIER 3: Redis cluster -->
+<rect class="box-teal" x="60" y="340" width="530" height="120" rx="12" stroke-width="0.5"/>
+<text class="th" x="325" y="362" text-anchor="middle" style="fill:#085041">Redis cluster   (sharded by zone_id)</text>
+
+<rect class="teal-inner" x="80" y="374" width="148" height="74" rx="6" stroke-width="0.5"/>
+<text class="ts teal-text" x="154" y="393" text-anchor="middle" style="font-weight:600">surge:BLR:zone_12</text>
+<text class="ts teal-sub" x="154" y="412" text-anchor="middle">→ 1.4×</text>
+<text class="ts teal-sub" x="154" y="428" text-anchor="middle">TTL: 35s</text>
+
+<rect class="teal-inner" x="248" y="374" width="148" height="74" rx="6" stroke-width="0.5"/>
+<text class="ts teal-text" x="322" y="393" text-anchor="middle" style="font-weight:600">eta:rest_4821</text>
+<text class="ts teal-sub" x="322" y="412" text-anchor="middle">→ 28 min</text>
+<text class="ts teal-sub" x="322" y="428" text-anchor="middle">TTL: 35s</text>
+
+<rect class="teal-inner" x="416" y="374" width="156" height="74" rx="6" stroke-width="0.5"/>
+<text class="ts teal-text" x="494" y="393" text-anchor="middle" style="font-weight:600">stock:rest_4821:item_9</text>
+<text class="ts teal-sub" x="494" y="412" text-anchor="middle">→ 14 left</text>
+<text class="ts teal-sub" x="494" y="428" text-anchor="middle">TTL: 35s</text>
+
+<!-- Kafka → Redis -->
+<line x1="325" y1="294" x2="325" y2="338" stroke="#ba7517" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<text class="ts" x="345" y="318" style="fill:#888">consumers write</text>
+
+<!-- divider -->
+<line x1="55" y1="494" x2="625" y2="494" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+<!-- TIER 4: Delivery -->
+<rect class="box-coral" x="60" y="514" width="160" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="140" y="538" text-anchor="middle" style="fill:#712b13">CDN edge nodes</text>
+<text class="ts" x="140" y="556" text-anchor="middle" style="fill:#993c1d">Static + warm cache</text>
+
+<rect class="box-coral" x="250" y="514" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="335" y="538" text-anchor="middle" style="fill:#712b13">WebSocket servers</text>
+<text class="ts" x="335" y="556" text-anchor="middle" style="fill:#993c1d">Push every 30s</text>
+
+<rect class="box-coral" x="450" y="514" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="525" y="538" text-anchor="middle" style="fill:#712b13">SSE fallback</text>
+<text class="ts" x="525" y="556" text-anchor="middle" style="fill:#993c1d">Older clients</text>
+
+<!-- Redis → Delivery -->
+<line x1="140" y1="460" x2="140" y2="512" stroke="#1d9e75" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="325" y1="460" x2="325" y2="512" stroke="#1d9e75" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="515" y1="460" x2="515" y2="512" stroke="#1d9e75" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+
+<!-- divider -->
+<line x1="55" y1="598" x2="625" y2="598" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+<!-- TIER 5: Clients -->
+<rect class="box-blue" x="80" y="620" width="130" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="145" y="644" text-anchor="middle" style="fill:#0c447c">Mobile app</text>
+<text class="ts" x="145" y="662" text-anchor="middle" style="fill:#185fa5">In-memory 30s state</text>
+
+<rect class="box-blue" x="275" y="620" width="130" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="644" text-anchor="middle" style="fill:#0c447c">Web browser</text>
+<text class="ts" x="340" y="662" text-anchor="middle" style="fill:#185fa5">Optimistic UI</text>
+
+<rect class="box-blue" x="470" y="620" width="130" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="535" y="644" text-anchor="middle" style="fill:#0c447c">Low-end device</text>
+<text class="ts" x="535" y="662" text-anchor="middle" style="fill:#185fa5">Polling fallback</text>
+
+<!-- Delivery → Clients -->
+<line x1="145" y1="570" x2="145" y2="618" stroke="#993c1d" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="335" y1="570" x2="335" y2="618" stroke="#993c1d" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="525" y1="570" x2="525" y2="618" stroke="#993c1d" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+
+<!-- DB → Compute arrows -->
+<line x1="130" y1="104" x2="130" y2="154" stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="300" y1="104" x2="300" y2="154" stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+<line x1="480" y1="104" x2="480" y2="154" stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+
+<!-- Circuit breaker -->
+<rect class="box-red" x="60" y="716" width="530" height="44" rx="8" stroke-width="0.5"/>
+<text class="th" x="325" y="734" text-anchor="middle" style="fill:#791f1f">Circuit breaker + rate limiter</text>
+<text class="ts" x="325" y="750" text-anchor="middle" style="fill:#a32d2d">If Redis misses → serve stale · DB reads gated by token bucket · Graceful degradation</text>
+
+<line x1="325" y1="676" x2="325" y2="714" stroke="#a32d2d" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#arrow)"/>
+</svg>
