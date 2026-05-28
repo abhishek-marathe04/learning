@@ -746,6 +746,8 @@ The interview isn't a test of whether you produce a perfect design. It's a test 
 ## 6. Resumable File Uploads
 *Session: 2026-05-06*
 
+**Architecture diagram:** [resumable_upload_system_design.svg](assets/resumable_file_upload.svg/resumable_upload_system_design.svg)
+
 ---
 
 ### The problem
