@@ -29,7 +29,7 @@ Two dominant approaches exist:
 
 ## System architecture
 
-
+![Real-time collaborative text editor system architecture](assets/realtime_editor/system_design.svg)
 
 ### Key architectural decisions
 
