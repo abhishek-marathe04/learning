@@ -61,7 +61,7 @@ The four exercises in the lecture:
 
 ## 3. Step 1 — Embedding lookup `C[Xb]`
 
-![Embedding lookup diagram](backprop_ninja_backprop_ninja_assets/01_embedding_lookup.png)
+![Embedding lookup diagram](backprop_ninja_assets/01_embedding_lookup.png)
 
 ### What is C?
 
