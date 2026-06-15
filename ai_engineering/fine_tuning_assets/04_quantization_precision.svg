@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" viewBox="0 0 860 440" style="background:#fff;font-family:sans-serif">
+
+  <!-- Title -->
+  <text x="430" y="28" text-anchor="middle" font-size="18" font-weight="600" fill="#1a1a1a">Floating Point Precision Levels in LLMs</text>
+  <text x="430" y="48" text-anchor="middle" font-size="12" fill="#888">Same weight value 0.31415920 stored at different bit widths</text>
+
+  <!-- Column headers -->
+  <text x="110" y="76" text-anchor="middle" font-size="12" fill="#555" font-weight="600">Format</text>
+  <text x="360" y="76" text-anchor="middle" font-size="12" fill="#555" font-weight="600">Bit layout (conceptual)</text>
+  <text x="620" y="76" text-anchor="middle" font-size="12" fill="#555" font-weight="600">Memory (7B model)</text>
+  <text x="770" y="76" text-anchor="middle" font-size="12" fill="#555" font-weight="600">Quality</text>
+
+  <line x1="20" y1="82" x2="840" y2="82" stroke="#e0e0e0" stroke-width="1"/>
+
+  <!-- ROW 1: float32 -->
+  <rect x="20" y="92" width="820" height="70" rx="6" fill="#F7FAFE"/>
+  <rect x="28" y="100" width="128" height="54" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="92" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#0C447C">float32</text>
+  <text x="92" y="142" text-anchor="middle" font-size="11" fill="#185FA5">32 bits per weight</text>
+
+  <!-- bit diagram -->
+  <rect x="175" y="104" width="14" height="34" rx="2" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="182" y="98" text-anchor="middle" font-size="9" fill="#185FA5">sign</text>
+  <rect x="193" y="104" width="112" height="34" rx="2" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="249" y="98" text-anchor="middle" font-size="9" fill="#185FA5">exponent (8 bits)</text>
+  <rect x="309" y="104" width="284" height="34" rx="2" fill="#EEF5FC" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="451" y="98" text-anchor="middle" font-size="9" fill="#185FA5">mantissa (23 bits)</text>
+  <text x="182" y="150" text-anchor="middle" font-size="9" fill="#888">0</text>
+  <text x="249" y="150" text-anchor="middle" font-size="9" fill="#888">01111101</text>
+  <text x="380" y="150" text-anchor="middle" font-size="9" fill="#888">01000001110101011100001</text>
+
+  <rect x="580" y="106" width="130" height="38" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="645" y="128" text-anchor="middle" font-size="13" font-weight="600" fill="#0C447C">~28 GB</text>
+  <rect x="730" y="106" width="100" height="38" rx="6" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="780" y="128" text-anchor="middle" font-size="12" font-weight="600" fill="#27500A">best ✓✓</text>
+
+  <!-- ROW 2: bfloat16 -->
+  <rect x="20" y="168" width="820" height="70" rx="6" fill="#fff"/>
+  <rect x="28" y="176" width="128" height="54" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="92" y="198" text-anchor="middle" font-size="14" font-weight="700" fill="#085041">bfloat16</text>
+  <text x="92" y="216" text-anchor="middle" font-size="11" fill="#0F6E56">16 bits per weight</text>
+
+  <rect x="175" y="180" width="14" height="34" rx="2" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <rect x="193" y="180" width="112" height="34" rx="2" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="249" y="174" text-anchor="middle" font-size="9" fill="#0F6E56">exponent (8 bits)</text>
+  <rect x="309" y="180" width="92" height="34" rx="2" fill="#EBF8F2" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="355" y="174" text-anchor="middle" font-size="9" fill="#0F6E56">mantissa (7 bits)</text>
+  <text x="249" y="226" text-anchor="middle" font-size="9" fill="#888">same range as float32</text>
+  <text x="355" y="226" text-anchor="middle" font-size="9" fill="#888">less precision</text>
+
+  <rect x="580" y="182" width="130" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="645" y="204" text-anchor="middle" font-size="13" font-weight="600" fill="#085041">~14 GB</text>
+  <rect x="730" y="182" width="100" height="38" rx="6" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="780" y="204" text-anchor="middle" font-size="12" font-weight="600" fill="#27500A">very good ✓</text>
+
+  <!-- ROW 3: int8 -->
+  <rect x="20" y="244" width="820" height="70" rx="6" fill="#F7FAFE"/>
+  <rect x="28" y="252" width="128" height="54" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="92" y="274" text-anchor="middle" font-size="15" font-weight="700" fill="#633806">int8</text>
+  <text x="92" y="292" text-anchor="middle" font-size="11" fill="#854F0B">8 bits per weight</text>
+
+  <rect x="175" y="256" width="224" height="34" rx="2" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="287" y="250" text-anchor="middle" font-size="9" fill="#854F0B">integer — 256 buckets (0–255), no decimal</text>
+  <text x="287" y="302" text-anchor="middle" font-size="9" fill="#888">0.31415 → stored as integer ~76  (with scale+zero point stored separately)</text>
+
+  <rect x="580" y="258" width="130" height="38" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="645" y="280" text-anchor="middle" font-size="13" font-weight="600" fill="#633806">~7 GB</text>
+  <rect x="730" y="258" width="100" height="38" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="780" y="280" text-anchor="middle" font-size="12" font-weight="600" fill="#633806">good ~</text>
+
+  <!-- ROW 4: nf4 (QLoRA) -->
+  <rect x="20" y="320" width="820" height="70" rx="6" fill="#FBF9FF"/>
+  <!-- purple accent bar -->
+  <rect x="20" y="320" width="6" height="70" rx="3" fill="#7F77DD"/>
+  <rect x="28" y="328" width="128" height="54" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="92" y="350" text-anchor="middle" font-size="14" font-weight="700" fill="#26215C">nf4</text>
+  <text x="92" y="368" text-anchor="middle" font-size="11" fill="#534AB7">4 bits — used by QLoRA</text>
+
+  <rect x="175" y="332" width="112" height="34" rx="2" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="231" y="326" text-anchor="middle" font-size="9" fill="#534AB7">4 bits = 16 possible values only</text>
+  <text x="231" y="378" text-anchor="middle" font-size="9" fill="#888">0.31415 → maps to nearest of 16 NormalFloat quantile points</text>
+  <text x="450" y="378" text-anchor="middle" font-size="9" fill="#7F77DD">NF4 places buckets at quantiles of normal distribution (smarter than equal spacing)</text>
+
+  <rect x="580" y="334" width="130" height="38" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="645" y="356" text-anchor="middle" font-size="13" font-weight="600" fill="#26215C">~3.5 GB</text>
+  <rect x="730" y="334" width="100" height="38" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="780" y="352" text-anchor="middle" font-size="11" font-weight="600" fill="#633806">surprisingly</text>
+  <text x="780" y="366" text-anchor="middle" font-size="11" font-weight="600" fill="#633806">ok ~</text>
+
+  <!-- Footer note -->
+  <rect x="20" y="404" width="820" height="28" rx="6" fill="#F8F7FF" stroke="#AFA9EC" stroke-width="0.5"/>
+  <text x="430" y="422" text-anchor="middle" font-size="11" fill="#3C3489">QLoRA: W stored as nf4 (3.5 GB) + A,B kept as bfloat16 (tiny) → fine-tune 7B model on a single consumer GPU</text>
+</svg>

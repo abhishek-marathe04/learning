@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" viewBox="0 0 860 420" style="background:#fff;font-family:sans-serif">
+
+  <!-- Title -->
+  <text x="430" y="30" text-anchor="middle" font-size="18" font-weight="600" fill="#1a1a1a">Catastrophic Forgetting: Full Fine-Tuning vs LoRA</text>
+
+  <!-- DIVIDER -->
+  <line x1="430" y1="48" x2="430" y2="390" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="6 4"/>
+
+  <!-- === LEFT: Full fine-tuning === -->
+  <text x="215" y="58" text-anchor="middle" font-size="12" fill="#888">Full Fine-Tuning</text>
+
+  <!-- brain container -->
+  <rect x="30" y="68" width="380" height="280" rx="16" fill="none" stroke="#ccc" stroke-width="1.2"/>
+
+  <!-- BEFORE label -->
+  <text x="220" y="90" text-anchor="middle" font-size="11" fill="#aaa">before training — general knowledge intact</text>
+
+  <!-- 4 knowledge zones -->
+  <rect x="52" y="98" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="126" y="122" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">reasoning</text>
+
+  <rect x="212" y="98" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="286" y="122" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">coding</text>
+
+  <rect x="52" y="154" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="126" y="178" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">math</text>
+
+  <rect x="212" y="154" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="286" y="178" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">language</text>
+
+  <!-- arrow down -->
+  <text x="220" y="216" text-anchor="middle" font-size="11" fill="#D85A30">↓ train on Confluence data ↓</text>
+
+  <!-- AFTER: some zones degraded (coral = damaged) -->
+  <rect x="52" y="228" width="148" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="126" y="252" text-anchor="middle" font-size="13" font-weight="500" fill="#085041">Confluence ✓</text>
+
+  <rect x="212" y="228" width="148" height="44" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="286" y="248" text-anchor="middle" font-size="13" font-weight="500" fill="#993C1D">coding ?</text>
+  <text x="286" y="264" text-anchor="middle" font-size="10" fill="#D85A30">degraded</text>
+
+  <rect x="52" y="284" width="148" height="44" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="126" y="304" text-anchor="middle" font-size="13" font-weight="500" fill="#993C1D">math ?</text>
+  <text x="126" y="320" text-anchor="middle" font-size="10" fill="#D85A30">degraded</text>
+
+  <rect x="212" y="284" width="148" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="286" y="308" text-anchor="middle" font-size="13" font-weight="500" fill="#085041">Confluence ✓</text>
+
+  <!-- danger label -->
+  <rect x="52" y="340" width="308" height="32" rx="6" fill="#FCEBEB" stroke="#E24B4A" stroke-width="1"/>
+  <text x="206" y="360" text-anchor="middle" font-size="12" font-weight="600" fill="#A32D2D">general skills overwritten — model regresses</text>
+
+  <!-- === RIGHT: LoRA === -->
+  <text x="645" y="58" text-anchor="middle" font-size="12" fill="#888">LoRA</text>
+
+  <!-- brain container -->
+  <rect x="450" y="68" width="380" height="280" rx="16" fill="none" stroke="#ccc" stroke-width="1.2"/>
+
+  <!-- FROZEN label -->
+  <text x="640" y="90" text-anchor="middle" font-size="11" fill="#aaa">base weights — permanently frozen</text>
+
+  <!-- 4 zones all intact -->
+  <rect x="472" y="98" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="546" y="122" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">reasoning ✓</text>
+
+  <rect x="632" y="98" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="706" y="122" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">coding ✓</text>
+
+  <rect x="472" y="154" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="546" y="178" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">math ✓</text>
+
+  <rect x="632" y="154" width="148" height="44" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+  <text x="706" y="178" text-anchor="middle" font-size="13" font-weight="500" fill="#0C447C">language ✓</text>
+
+  <!-- adapter sits on top -->
+  <text x="640" y="216" text-anchor="middle" font-size="11" fill="#1D9E75">↓ LoRA adapter added on top ↓</text>
+
+  <!-- adapter layer -->
+  <rect x="472" y="228" width="308" height="96" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+  <text x="626" y="260" text-anchor="middle" font-size="14" font-weight="600" fill="#085041">LoRA adapter (A × B)</text>
+  <text x="626" y="280" text-anchor="middle" font-size="11" fill="#0F6E56">only domain-specific corrections</text>
+  <text x="626" y="298" text-anchor="middle" font-size="11" fill="#0F6E56">sits alongside W, does not overwrite it</text>
+  <text x="626" y="316" text-anchor="middle" font-size="11" fill="#0F6E56">swappable, removable, stackable</text>
+
+  <!-- success label -->
+  <rect x="472" y="340" width="308" height="32" rx="6" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+  <text x="626" y="360" text-anchor="middle" font-size="12" font-weight="600" fill="#27500A">all general skills preserved — only domain added</text>
+
+  <!-- bottom annotation -->
+  <text x="215" y="400" text-anchor="middle" font-size="11" fill="#aaa">weights overwritten → gradient erases old knowledge</text>
+  <text x="645" y="400" text-anchor="middle" font-size="11" fill="#aaa">W frozen → gradient only updates A and B</text>
+</svg>
