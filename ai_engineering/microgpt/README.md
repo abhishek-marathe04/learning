@@ -8,6 +8,7 @@ A 200-line pure Python GPT with no dependencies. Below is the full structure wit
 
 **Detailed notes:**
 - [learning-micro-gpt.md](learning-micro-gpt.md) — autograd engine, helpers, parameters, full forward pass
+- [training-notes.md](training-notes.md) — training loop, cross-entropy loss, backward pass, Adam optimizer
 - [inference-notes.md](inference-notes.md) — autoregressive sampling, temperature, hallucination
 
 ---
@@ -257,14 +258,14 @@ sampled token_id  ────────────────────�
 
 ## Open Questions / Next Steps
 
-**Training loop (not yet covered):**
-- How is cross-entropy loss computed from the 27 logits?
-- How does `loss.backward()` flow all the way back through the KV cache to the weight matrices?
-- Adam optimizer — what do the momentum buffers `m` and `v` actually do per parameter?
-- How do the weight matrices actually change during a training step?
+**Still genuinely open:**
+- Why does Karpathy use `beta1=0.85 / beta2=0.99` (non-default) vs PyTorch's `0.9 / 0.999`? Worth exploring for a short run.
+- Compare gradient magnitude of a near-loss parameter (`lm_head`) vs a deep one (`attn_wq[0][0]`) to see vanishing-gradient shrinkage directly.
 
-**Inference experiments to run:**
-- Try `temperature` values (0.1, 0.5, 1.0, 1.5) — observe how name quality/diversity shifts.
+**Experiments to run locally:**
+- Train microgpt and print `params[0].grad, params[100].grad` for the first ~10 steps — watch gradients settle.
+- Print `m[i], v[i], m_hat, v_hat` for one parameter over early steps — watch bias-correction warmup live.
+- Try `temperature` values (0.1, 0.5, 1.0, 1.5) during inference — observe how name quality/diversity shifts.
 - Fix `random.seed()` before sampling to confirm the forward pass is deterministic (same probs printed 20× in a row).
 - Swap the dataset (cities, Pokémon, words) — same code, different conditional distribution.
 
@@ -279,4 +280,5 @@ sampled token_id  ────────────────────�
 
 **Session notes:**
 - [learning-micro-gpt.md](learning-micro-gpt.md) — June 17 deep-dive: autograd, forward pass, all weight matrices
+- [training-notes.md](training-notes.md) — June 20 deep-dive: training loop, cross-entropy, Adam m/v/bias-correction, gradient trace
 - [inference-notes.md](inference-notes.md) — June 20 deep-dive: sampling, temperature, autoregression, hallucination
