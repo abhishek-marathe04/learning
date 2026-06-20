@@ -1,16 +1,20 @@
 # microgpt — Transformer Internals Walkthrough
 
 > **Source:** [microgpt by Andrej Karpathy](https://karpathy.github.io/2026/02/12/microgpt/)
-> **Session Date:** June 17, 2026
-> **Tags:** `#microgpt` `#transformer` `#attention` `#autograd` `#karpathy`
+> **Sessions:** June 17, 2026 (architecture) · June 20, 2026 (inference)
+> **Tags:** `#microgpt` `#transformer` `#attention` `#autograd` `#karpathy` `#embeddings` `#kv-cache` `#multi-head-attention` `#inference` `#sampling` `#temperature` `#autoregression`
 
 A 200-line pure Python GPT with no dependencies. Below is the full structure with key code excerpts. Each section links to detailed notes.
+
+**Detailed notes:**
+- [learning-micro-gpt.md](learning-micro-gpt.md) — autograd engine, helpers, parameters, full forward pass
+- [inference-notes.md](inference-notes.md) — autoregressive sampling, temperature, hallucination
 
 ---
 
 ## 1. Autograd Engine — `Value`
 
-→ **[Detailed notes: autograd.md](autograd.md)**
+→ **[Detailed notes: learning-micro-gpt.md](learning-micro-gpt.md#__slots__-on-the-value-class)**
 
 The `Value` class is a scalar with built-in automatic differentiation. Every weight and intermediate result in microgpt is a `Value`.
 
@@ -44,7 +48,7 @@ for v in reversed(topo):
 
 ## 2. Helper Functions
 
-→ **[Detailed notes: gpt-model.md](gpt-model.md)**
+→ **[Detailed notes: learning-micro-gpt.md](learning-micro-gpt.md#linear-matrix-vector-multiplication)**
 
 Three pure functions used throughout the forward pass:
 
@@ -72,7 +76,7 @@ def rmsnorm(x):
 
 ## 3. Parameter Setup
 
-→ **[Detailed notes: parameters.md](parameters.md)**
+→ **[Detailed notes: learning-micro-gpt.md](learning-micro-gpt.md#parameter-setup--all-weight-matrices-explained)**
 
 All weights initialized once before training. `n_embd=16`, `n_head=4`, `n_layer=1`, `vocab_size=27`:
 
@@ -103,7 +107,7 @@ All matrices start as noise (`gauss(0, 0.08)`). Training shapes them into their 
 
 ## 4. Forward Pass — `gpt(token_id, pos_id)`
 
-→ **[Detailed notes: gpt-model.md](gpt-model.md)**
+→ **[Detailed notes: learning-micro-gpt.md](learning-micro-gpt.md#stage-1-embeddings-in-gpt)**
 
 ### Stage 1: Embeddings
 
@@ -175,7 +179,47 @@ return logits   # 27 scores, one per vocabulary token
 
 ---
 
-## 5. Pipeline at a glance
+## 5. Inference Loop
+
+→ **[Detailed notes: inference-notes.md](inference-notes.md)**
+
+The same `gpt()` function runs unchanged. Three things differ from training: no target/loss/backward, the model's own sampled output feeds back as the next input (autoregression), and the KV cache resets per sample.
+
+```python
+temperature = 0.5
+for sample_idx in range(20):
+    keys, values = [[] for _ in range(n_layer)], [[] for _ in range(n_layer)]
+    token_id = BOS
+    sample = []
+    for pos_id in range(block_size):
+        logits = gpt(token_id, pos_id, keys, values)
+        probs = softmax([l / temperature for l in logits])
+        token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
+        if token_id == BOS:
+            break
+        sample.append(uchars[token_id])
+    print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
+```
+
+**Forward pass is fully deterministic.** Same input + frozen params → same logits → same probs, every time. All randomness is in `random.choices` — a weighted die roll over the probability distribution.
+
+**The learned probabilities mirror training data frequencies.** If `'a'` started ~45% of names, the model emits `'a'` first ~45% of the time. At every position the model has learned `p(next | context)` — that's what cross-entropy optimized.
+
+**Temperature** controls how sharp or flat the distribution is before sampling:
+
+| temperature | effect |
+|-------------|--------|
+| → 0 | greedy decoding — always picks the single highest-probability token |
+| 1.0 | raw learned distribution — no change |
+| → ∞ | nearly uniform — ignores what was learned |
+
+**BOS doubles as the stop signal** — training wrapped every document `[BOS, ...chars..., BOS]`, so the model predicts BOS when a name is complete.
+
+**Hallucination is just sampling.** microgpt generating `karia` is mechanically identical to ChatGPT stating a plausible-but-wrong fact — both are sampling from a learned distribution with no concept of truth.
+
+---
+
+## 6. Pipeline at a glance
 
 ```
 token_id, pos_id
@@ -196,17 +240,33 @@ wte[token_id] + wpe[pos_id]    → 16-dim (what + where)
       ↓  (repeat n_layer times)
 lm_head: 16 → 27 logits
       ↓
-softmax → sample next token
+── TRAINING ──────────────────────────────────────
+softmax(logits) → cross-entropy loss vs. target
+loss.backward() → gradients → Adam update weights
+
+── INFERENCE ─────────────────────────────────────
+logits / temperature → softmax → random.choices()
+      ↓
+sampled token_id  ──────────────────────┐
+      ↑                                 │ (feed back)
+      └─────────────────────────────────┘
+      stop when BOS sampled or block_size reached
 ```
 
 ---
 
 ## Open Questions / Next Steps
 
-- Training loop — how is loss computed from the 27 logits?
+**Training loop (not yet covered):**
+- How is cross-entropy loss computed from the 27 logits?
 - How does `loss.backward()` flow all the way back through the KV cache to the weight matrices?
 - Adam optimizer — what do the momentum buffers `m` and `v` actually do per parameter?
 - How do the weight matrices actually change during a training step?
+
+**Inference experiments to run:**
+- Try `temperature` values (0.1, 0.5, 1.0, 1.5) — observe how name quality/diversity shifts.
+- Fix `random.seed()` before sampling to confirm the forward pass is deterministic (same probs printed 20× in a row).
+- Swap the dataset (cities, Pokémon, words) — same code, different conditional distribution.
 
 ---
 
@@ -216,3 +276,7 @@ softmax → sample next token
 - [microgpt.py gist](https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95)
 - [micrograd video (2.5 hrs)](https://www.youtube.com/watch?v=VMj-3S1tku0) — deep dive on the Value/autograd engine
 - [Google Colab notebook](https://colab.research.google.com/drive/1vyN5zo6rqUp_dYNbT4Yrco66zuWCZKoN?usp=sharing)
+
+**Session notes:**
+- [learning-micro-gpt.md](learning-micro-gpt.md) — June 17 deep-dive: autograd, forward pass, all weight matrices
+- [inference-notes.md](inference-notes.md) — June 20 deep-dive: sampling, temperature, autoregression, hallucination
