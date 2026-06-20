@@ -1,0 +1,32 @@
+<svg width="100%" viewBox="0 0 680 260" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Sampling the first character after BOS as a weighted die roll</title>
+<desc>A horizontal bar showing the probability distribution over a few example tokens after BOS, illustrating that sampling picks one token randomly according to these weights, not always the highest one.</desc>
+<style>
+.t{font-family:sans-serif;font-size:14px}
+.ts{font-family:sans-serif;font-size:12px}
+.th{font-family:sans-serif;font-size:14px;font-weight:500}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<text class="th" x="40" y="30" fill="#3d3d3a">probs after gpt(BOS, pos=0) and softmax</text>
+
+<rect x="40" y="50" width="270" height="36" rx="4" fill="#7F77DD"/>
+<text class="ts" x="50" y="68" dominant-baseline="central" fill="#26215C">a &#8212; 45%</text>
+
+<rect x="40" y="94" width="120" height="36" rx="4" fill="#AFA9EC"/>
+<text class="ts" x="50" y="112" dominant-baseline="central" fill="#26215C">k &#8212; 20%</text>
+
+<rect x="40" y="138" width="84" height="36" rx="4" fill="#CECBF6"/>
+<text class="ts" x="50" y="156" dominant-baseline="central" fill="#26215C">j &#8212; 14%</text>
+
+<rect x="40" y="182" width="252" height="36" rx="4" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+<text class="ts" x="50" y="200" dominant-baseline="central" fill="#3C3489">...23 others &#8212; 21% combined</text>
+
+<text class="ts" x="340" y="68" dominant-baseline="central" fill="#73726c">picked ~45 times out of 100 samples</text>
+<text class="ts" x="200" y="112" dominant-baseline="central" fill="#73726c">picked ~20 times out of 100</text>
+<text class="ts" x="164" y="156" dominant-baseline="central" fill="#73726c">picked ~14 times out of 100</text>
+
+<text class="ts" x="40" y="240" fill="#73726c">same BOS, same pos=0, same probs &#8212; but random.choices rolls a new die each call</text>
+</svg>

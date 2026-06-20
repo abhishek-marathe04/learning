@@ -1,0 +1,71 @@
+<svg width="100%" viewBox="0 0 680 380" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Full Adam update trace for three steps showing m_hat, v_hat, step size, and resulting p.data</title>
+<desc>Table-style diagram tracking how a parameter's value changes across three training steps using the bias-corrected Adam update.</desc>
+<style>
+.t{font-family:sans-serif;font-size:14px}
+.ts{font-family:sans-serif;font-size:12px}
+.th{font-family:sans-serif;font-size:14px;font-weight:500}
+.arr{stroke:#73726c;stroke-width:1.5;fill:none}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<text class="th" x="40" y="32" fill="#3d3d3a">p.data starts at 0.500 (some random init)</text>
+
+<g><rect x="40" y="55" width="100" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text class="th" x="90" y="73" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A">step 0</text></g>
+<g><rect x="290" y="55" width="100" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text class="th" x="340" y="73" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A">step 1</text></g>
+<g><rect x="540" y="55" width="100" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text class="th" x="590" y="73" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A">step 2</text></g>
+
+<line x1="140" y1="73" x2="288" y2="73" class="arr" marker-end="url(#arrow)"/>
+<line x1="390" y1="73" x2="538" y2="73" class="arr" marker-end="url(#arrow)"/>
+
+<g><rect x="20" y="105" width="140" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text class="th" x="90" y="121" text-anchor="middle" dominant-baseline="central" fill="#3C3489">m_hat = 2.000</text>
+<text class="ts" x="90" y="139" text-anchor="middle" dominant-baseline="central" fill="#534AB7">v_hat = 4.000</text></g>
+
+<g><rect x="270" y="105" width="140" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text class="th" x="340" y="121" text-anchor="middle" dominant-baseline="central" fill="#3C3489">m_hat = 2.000</text>
+<text class="ts" x="340" y="139" text-anchor="middle" dominant-baseline="central" fill="#534AB7">v_hat = 4.020</text></g>
+
+<g><rect x="520" y="105" width="140" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text class="th" x="590" y="121" text-anchor="middle" dominant-baseline="central" fill="#3C3489">m_hat = 0.834</text>
+<text class="ts" x="590" y="139" text-anchor="middle" dominant-baseline="central" fill="#534AB7">v_hat = 2.990</text></g>
+
+<line x1="90" y1="155" x2="90" y2="185" stroke="#534AB7" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+<line x1="340" y1="155" x2="340" y2="185" stroke="#534AB7" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+<line x1="590" y1="155" x2="590" y2="185" stroke="#534AB7" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+<g><rect x="20" y="185" width="140" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="90" y="201" text-anchor="middle" dominant-baseline="central" fill="#085041">step = 2.0/2.0</text>
+<text class="ts" x="90" y="219" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">= 1.000</text></g>
+
+<g><rect x="270" y="185" width="140" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="340" y="201" text-anchor="middle" dominant-baseline="central" fill="#085041">step = 2.0/2.005</text>
+<text class="ts" x="340" y="219" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">= 0.997</text></g>
+
+<g><rect x="520" y="185" width="140" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="590" y="201" text-anchor="middle" dominant-baseline="central" fill="#085041">step = 0.834/1.729</text>
+<text class="ts" x="590" y="219" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">= 0.482</text></g>
+
+<line x1="90" y1="235" x2="90" y2="265" stroke="#3B6D11" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+<line x1="340" y1="235" x2="340" y2="265" stroke="#3B6D11" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+<line x1="590" y1="235" x2="590" y2="265" stroke="#3B6D11" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+<g><rect x="20" y="265" width="140" height="50" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+<text class="th" x="90" y="281" text-anchor="middle" dominant-baseline="central" fill="#27500A">p.data = 0.490</text>
+<text class="ts" x="90" y="299" text-anchor="middle" dominant-baseline="central" fill="#3B6D11">0.500 - 0.01*1.000</text></g>
+
+<g><rect x="270" y="265" width="140" height="50" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+<text class="th" x="340" y="281" text-anchor="middle" dominant-baseline="central" fill="#27500A">p.data = 0.4803</text>
+<text class="ts" x="340" y="299" text-anchor="middle" dominant-baseline="central" fill="#3B6D11">0.490 - 0.00993*0.997</text></g>
+
+<g><rect x="520" y="265" width="140" height="50" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1"/>
+<text class="th" x="590" y="281" text-anchor="middle" dominant-baseline="central" fill="#27500A">p.data = 0.4756</text>
+<text class="ts" x="590" y="299" text-anchor="middle" dominant-baseline="central" fill="#3B6D11">0.4803 - 0.00984*0.482</text></g>
+
+<text class="ts" x="340" y="340" text-anchor="middle" fill="#73726c">lr_t shrinks slightly each step (0.01, 0.0099, 0.0098...) from the (1 - step/num_steps) decay</text>
+</svg>

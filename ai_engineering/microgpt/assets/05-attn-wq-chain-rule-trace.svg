@@ -1,0 +1,81 @@
+<svg width="100%" viewBox="0 0 680 620" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Forward and backward path of one attn_wq parameter through attention, into the loss, and back</title>
+<desc>Diagram showing how a single weight in attn_wq feeds into the query vector at position 0, which influences attention weights at every later position, which influences the loss at every later position, and how gradients flow back through that same fan-out.</desc>
+<style>
+.t{font-family:sans-serif;font-size:14px}
+.ts{font-family:sans-serif;font-size:12px}
+.th{font-family:sans-serif;font-size:14px;font-weight:500}
+.arr{stroke:#73726c;stroke-width:1.5;fill:none}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<g><rect x="270" y="20" width="140" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text class="th" x="340" y="38" text-anchor="middle" dominant-baseline="central" fill="#3C3489">w = attn_wq[0][0]</text>
+<text class="ts" x="340" y="56" text-anchor="middle" dominant-baseline="central" fill="#534AB7">data = -0.2096</text></g>
+
+<line x1="340" y1="70" x2="340" y2="105" class="arr" marker-end="url(#arrow)"/>
+
+<g><rect x="240" y="105" width="200" height="50" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text class="th" x="340" y="123" text-anchor="middle" dominant-baseline="central" fill="#0C447C">q[0] at pos 0 (BOS)</text>
+<text class="ts" x="340" y="141" text-anchor="middle" dominant-baseline="central" fill="#185FA5">= w*xn0 + w01*xn1 = -0.1250</text></g>
+
+<text class="ts" x="170" y="185" text-anchor="middle" fill="#73726c">q[0] gets cached &#8212;</text>
+<text class="ts" x="170" y="200" text-anchor="middle" fill="#73726c">read again at every later step</text>
+
+<line x1="280" y1="155" x2="160" y2="230" class="arr" marker-end="url(#arrow)"/>
+<line x1="340" y1="155" x2="340" y2="230" class="arr" marker-end="url(#arrow)"/>
+<line x1="400" y1="155" x2="520" y2="230" class="arr" marker-end="url(#arrow)"/>
+
+<g><rect x="80" y="230" width="160" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="160" y="248" text-anchor="middle" dominant-baseline="central" fill="#085041">attn at pos 1 (e)</text>
+<text class="ts" x="160" y="266" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">looks back at pos 0</text></g>
+
+<g><rect x="260" y="230" width="160" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="340" y="248" text-anchor="middle" dominant-baseline="central" fill="#085041">attn at pos 2 (m)</text>
+<text class="ts" x="340" y="266" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">looks back at pos 0,1</text></g>
+
+<g><rect x="440" y="230" width="160" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+<text class="th" x="520" y="248" text-anchor="middle" dominant-baseline="central" fill="#085041">attn at pos 3 (a)</text>
+<text class="ts" x="520" y="266" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">looks back at pos 0,1,2</text></g>
+
+<line x1="160" y1="280" x2="160" y2="320" class="arr" marker-end="url(#arrow)"/>
+<line x1="340" y1="280" x2="340" y2="320" class="arr" marker-end="url(#arrow)"/>
+<line x1="520" y1="280" x2="520" y2="320" class="arr" marker-end="url(#arrow)"/>
+
+<g><rect x="80" y="320" width="160" height="50" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text class="th" x="160" y="338" text-anchor="middle" dominant-baseline="central" fill="#712B13">loss_1 = 1.2907</text>
+<text class="ts" x="160" y="356" text-anchor="middle" dominant-baseline="central" fill="#993C1D">predicting target 'm'</text></g>
+
+<g><rect x="260" y="320" width="160" height="50" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text class="th" x="340" y="338" text-anchor="middle" dominant-baseline="central" fill="#712B13">loss_2 = 1.4228</text>
+<text class="ts" x="340" y="356" text-anchor="middle" dominant-baseline="central" fill="#993C1D">predicting target 'a'</text></g>
+
+<g><rect x="440" y="320" width="160" height="50" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text class="th" x="520" y="338" text-anchor="middle" dominant-baseline="central" fill="#712B13">loss_3 = 1.2943</text>
+<text class="ts" x="520" y="356" text-anchor="middle" dominant-baseline="central" fill="#993C1D">predicting target BOS</text></g>
+
+<line x1="160" y1="370" x2="340" y2="410" class="arr" marker-end="url(#arrow)"/>
+<line x1="340" y1="370" x2="340" y2="410" class="arr" marker-end="url(#arrow)"/>
+<line x1="520" y1="370" x2="340" y2="410" class="arr" marker-end="url(#arrow)"/>
+
+<g><rect x="240" y="410" width="200" height="50" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+<text class="th" x="340" y="428" text-anchor="middle" dominant-baseline="central" fill="#633806">loss = avg(loss_0..loss_3)</text>
+<text class="ts" x="340" y="446" text-anchor="middle" dominant-baseline="central" fill="#854F0B">= 1.3544, loss.grad = 1</text></g>
+
+<line x1="240" y1="435" x2="100" y2="475" stroke="#888780" stroke-width="0.5" stroke-dasharray="4 4" fill="none"/>
+<text class="ts" x="40" y="490" fill="#73726c">grad flows</text>
+<text class="ts" x="40" y="504" fill="#73726c">back down</text>
+<text class="ts" x="40" y="518" fill="#73726c">every arrow</text>
+
+<line x1="340" y1="460" x2="340" y2="490" stroke="#854F0B" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+<text class="ts" x="500" y="480" text-anchor="middle" fill="#73726c">summed across</text>
+<text class="ts" x="500" y="494" text-anchor="middle" fill="#73726c">all 3 downstream paths</text>
+
+<g><rect x="270" y="555" width="140" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text class="th" x="340" y="573" text-anchor="middle" dominant-baseline="central" fill="#3C3489">w.grad = 4.77e-07</text>
+<text class="ts" x="340" y="591" text-anchor="middle" dominant-baseline="central" fill="#534AB7">tiny &#8212; diluted by 4 hops</text></g>
+
+<line x1="340" y1="490" x2="340" y2="553" stroke="#854F0B" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+</svg>

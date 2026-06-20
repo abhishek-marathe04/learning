@@ -1,0 +1,32 @@
+<svg width="100%" viewBox="0 0 680 420" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>SGD versus Adam descending a loss surface</title>
+<desc>A contour plot showing a noisy, zig-zagging SGD path versus a smoother, faster Adam path converging to the minimum.</desc>
+<style>
+.t{font-family:sans-serif;font-size:14px;fill:#3d3d3a}
+.ts{font-family:sans-serif;font-size:12px;fill:#73726c}
+.th{font-family:sans-serif;font-size:14px;font-weight:500;fill:#3d3d3a}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<ellipse cx="500" cy="210" rx="170" ry="120" fill="none" stroke="#73726c" stroke-width="0.5" opacity="0.5"/>
+<ellipse cx="500" cy="210" rx="125" ry="85" fill="none" stroke="#73726c" stroke-width="0.5" opacity="0.5"/>
+<ellipse cx="500" cy="210" rx="80" ry="50" fill="none" stroke="#73726c" stroke-width="0.5" opacity="0.5"/>
+<ellipse cx="500" cy="210" rx="35" ry="18" fill="none" stroke="#73726c" stroke-width="0.5" opacity="0.5"/>
+<circle cx="500" cy="210" r="3" fill="#1D9E75"/>
+<text class="ts" x="500" y="195" text-anchor="middle" fill="#0F6E56">minimum</text>
+
+<path d="M80,80 L120,150 L90,190 L150,220 L115,260 L180,275 L155,310 L230,320 L210,340 L300,335 L290,355 L370,345 L420,280 L460,230" fill="none" stroke="#E24B4A" stroke-width="1.5" opacity="0.85"/>
+<circle cx="80" cy="80" r="4" fill="#E24B4A"/>
+
+<path d="M80,80 Q150,130 220,170 Q320,225 420,225 Q470,220 460,230" fill="none" stroke="#185FA5" stroke-width="2"/>
+<circle cx="80" cy="80" r="4" fill="#185FA5"/>
+
+<circle cx="460" cy="230" r="5" fill="#0C447C"/>
+
+<rect x="40" y="40" width="14" height="14" rx="3" fill="#E24B4A"/>
+<text class="ts" x="60" y="51">SGD &#8212; noisy, zig-zags across ravine</text>
+<rect x="40" y="62" width="14" height="14" rx="3" fill="#185FA5"/>
+<text class="ts" x="60" y="73">Adam &#8212; smoothed, adaptive, more direct path</text>
+</svg>
