@@ -180,7 +180,57 @@ return logits   # 27 scores, one per vocabulary token
 
 ---
 
-## 5. Inference Loop
+## 5. Training Loop
+
+→ **[Detailed notes: training-notes.md](training-notes.md)**
+
+One step does five things in order: tokenize → forward + loss → backward → Adam update → reset gradients.
+
+```python
+learning_rate, beta1, beta2, eps_adam = 0.01, 0.85, 0.99, 1e-8
+m = [0.0] * len(params)   # first moment (smoothed gradient direction)
+v = [0.0] * len(params)   # second moment (smoothed gradient magnitude)
+
+for step in range(num_steps):
+    doc = docs[step % len(docs)]
+    tokens = [BOS] + [uchars.index(ch) for ch in doc] + [BOS]
+    n = min(block_size, len(tokens) - 1)
+
+    keys, values = [[] for _ in range(n_layer)], [[] for _ in range(n_layer)]
+    losses = []
+    for pos_id in range(n):
+        token_id, target_id = tokens[pos_id], tokens[pos_id + 1]
+        logits = gpt(token_id, pos_id, keys, values)
+        probs = softmax(logits)
+        loss_t = -probs[target_id].log()   # cross-entropy: -log(p_correct)
+        losses.append(loss_t)
+    loss = (1 / n) * sum(losses)
+
+    loss.backward()
+
+    lr_t = learning_rate * (1 - step / num_steps)   # linear decay
+    for i, p in enumerate(params):
+        m[i] = beta1 * m[i] + (1 - beta1) * p.grad
+        v[i] = beta2 * v[i] + (1 - beta2) * p.grad ** 2
+        m_hat = m[i] / (1 - beta1 ** (step + 1))   # bias correction
+        v_hat = v[i] / (1 - beta2 ** (step + 1))
+        p.data -= lr_t * m_hat / (v_hat ** 0.5 + eps_adam)
+        p.grad = 0
+```
+
+**Cross-entropy loss** — `loss_t = -probs[target_id].log()`: if the model assigns probability ~1 to the correct token the loss is ~0; if it's random (1/27 ≈ 0.037) the loss is ~3.3. Loss starts near 3.3 and drops toward ~2.37 as the model learns.
+
+**Adam** layers two tricks on top of the raw gradient:
+- `m` (β=0.85) — fast-moving smoothed direction; noise-filters one-off spikes
+- `v` (β=0.99) — slow-moving smoothed magnitude (sign-blind — squaring erases sign)
+- Dividing by `√v_hat` normalizes away raw gradient size so large and small gradients produce similarly-scaled steps — this kills SGD's zig-zag on asymmetric loss surfaces
+- Bias correction (`m_hat`, `v_hat`) cancels the artificial zero-start penalty, self-disabling after ~20 steps
+
+**Real gradient magnitudes:** `lm_head` (close to the loss) gets ~1–3; `attn_wq[0][0]` (buried deep) gets ~1e-7 — the same vanishing-gradient shrinkage that residual connections exist to fight.
+
+---
+
+## 6. Inference Loop
 
 → **[Detailed notes: inference-notes.md](inference-notes.md)**
 
@@ -220,7 +270,7 @@ for sample_idx in range(20):
 
 ---
 
-## 6. Pipeline at a glance
+## 7. Pipeline at a glance
 
 ```
 token_id, pos_id
