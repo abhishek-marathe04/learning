@@ -1,0 +1,101 @@
+<svg width="100%" viewBox="0 0 680 580" role="img">
+<title>UPI payment flow — full sequence diagram</title>
+<desc>Shows the 8-step message flow between payer app, NPCI switch, payee app, payer bank, and payee bank for a UPI transaction</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- Actor boxes row -->
+<g>
+  <rect x="20" y="20" width="90" height="44" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+  <text font-size="14" font-weight="500" x="65" y="46" text-anchor="middle" fill="#085041">Payer PSP</text>
+</g>
+<g>
+  <rect x="155" y="20" width="90" height="44" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+  <text font-size="14" font-weight="500" x="200" y="46" text-anchor="middle" fill="#3C3489">NPCI switch</text>
+</g>
+<g>
+  <rect x="290" y="20" width="90" height="44" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+  <text font-size="14" font-weight="500" x="335" y="46" text-anchor="middle" fill="#085041">Payee PSP</text>
+</g>
+<g>
+  <rect x="425" y="20" width="96" height="44" rx="8" fill="#FAECE7" stroke="#F0997B" stroke-width="0.5"/>
+  <text font-size="14" font-weight="500" x="473" y="46" text-anchor="middle" fill="#712B13">Payer bank</text>
+</g>
+<g>
+  <rect x="560" y="20" width="96" height="44" rx="8" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+  <text font-size="14" font-weight="500" x="608" y="46" text-anchor="middle" fill="#633806">Payee bank</text>
+</g>
+
+<!-- Lifelines -->
+<line x1="65"  y1="64" x2="65"  y2="560" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="200" y1="64" x2="200" y2="560" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="335" y1="64" x2="335" y2="560" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="473" y1="64" x2="473" y2="560" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="608" y1="64" x2="608" y2="560" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+<!-- Step 1 -->
+<text font-size="12" x="16" y="95" fill="#888780">1</text>
+<line x1="70" y1="100" x2="190" y2="100" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="128" y="93" text-anchor="middle" fill="#5F5E5A">ReqCollect (VPA, ₹amt)</text>
+
+<!-- Step 2 -->
+<text font-size="12" x="16" y="135" fill="#888780">2</text>
+<line x1="205" y1="140" x2="325" y2="140" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="265" y="133" text-anchor="middle" fill="#5F5E5A">Resolve VPA → IFSC, Acc</text>
+
+<!-- Step 3 -->
+<line x1="330" y1="162" x2="210" y2="162" stroke="#534AB7" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="265" y="155" text-anchor="middle" fill="#5F5E5A">Account details + token</text>
+
+<!-- Step 4 -->
+<text font-size="12" x="16" y="200" fill="#888780">3</text>
+<line x1="205" y1="205" x2="460" y2="205" stroke="#993C1D" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="330" y="198" text-anchor="middle" fill="#5F5E5A">ReqPay → debit ₹amt + hold</text>
+
+<!-- Step 5 -->
+<line x1="465" y1="227" x2="215" y2="227" stroke="#993C1D" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="340" y="220" text-anchor="middle" fill="#5F5E5A">RespPay 00 (debited OK)</text>
+
+<!-- Step 6 -->
+<text font-size="12" x="16" y="265" fill="#888780">4</text>
+<line x1="205" y1="270" x2="595" y2="270" stroke="#854F0B" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="400" y="263" text-anchor="middle" fill="#5F5E5A">ReqPay → credit ₹amt</text>
+
+<!-- Step 7 -->
+<line x1="600" y1="292" x2="215" y2="292" stroke="#854F0B" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="408" y="285" text-anchor="middle" fill="#5F5E5A">RespPay 00 (credited OK)</text>
+
+<!-- Step 8 -->
+<text font-size="12" x="16" y="330" fill="#888780">5</text>
+<line x1="195" y1="335" x2="80" y2="335" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="136" y="328" text-anchor="middle" fill="#5F5E5A">RespCollect SUCCESS</text>
+
+<!-- Step 9 -->
+<line x1="205" y1="355" x2="325" y2="355" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="264" y="348" text-anchor="middle" fill="#5F5E5A">Credit notification</text>
+
+<!-- Timing bar -->
+<rect x="20" y="385" width="636" height="28" rx="6" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<rect x="20" y="385" width="200" height="28" rx="6" fill="#9FE1CB" opacity="0.6"/>
+<rect x="220" y="385" width="180" height="28" rx="6" fill="#CECBF6" opacity="0.6"/>
+<rect x="400" y="385" width="256" height="28" rx="6" fill="#FAC775" opacity="0.6"/>
+<text font-size="12" x="120" y="404" text-anchor="middle" fill="#5F5E5A">~250ms VPA resolve</text>
+<text font-size="12" x="310" y="404" text-anchor="middle" fill="#5F5E5A">~600ms debit+credit</text>
+<text font-size="12" x="528" y="404" text-anchor="middle" fill="#5F5E5A">~150ms notify + settle</text>
+
+<text font-size="12" x="20" y="435" fill="#888780">Solid = request   Dashed = response</text>
+
+<!-- Key insight boxes -->
+<rect x="20" y="455" width="295" height="60" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<text font-size="12" x="30" y="474" fill="#5F5E5A">NPCI switch keeps txn state between</text>
+<text font-size="12" x="30" y="491" fill="#5F5E5A">steps 3→4 — this is the 2PC coordinator.</text>
+<text font-size="12" x="30" y="508" fill="#5F5E5A">Banks never talk to each other directly.</text>
+
+<rect x="325" y="455" width="331" height="60" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<text font-size="12" x="335" y="474" fill="#5F5E5A">All messages carry a txn ID (RRN) used</text>
+<text font-size="12" x="335" y="491" fill="#5F5E5A">for idempotency — duplicate ReqPay with</text>
+<text font-size="12" x="335" y="508" fill="#5F5E5A">same RRN → bank ignores it safely.</text>
+</svg>

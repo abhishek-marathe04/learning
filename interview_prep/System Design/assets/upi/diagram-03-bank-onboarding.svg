@@ -1,0 +1,79 @@
+<svg width="100%" viewBox="0 0 680 620" role="img">
+<title>UPI bank onboarding process</title>
+<desc>Seven-phase flowchart: RBI licence → NPCI membership → UPI gateway dev → certification → UAT → routing table update → go-live</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- Phase 1: RBI -->
+<rect x="215" y="20" width="250" height="56" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="42" text-anchor="middle" dominant-baseline="central" fill="#444441">RBI scheduled bank licence</text>
+<text font-size="12" x="340" y="62" text-anchor="middle" dominant-baseline="central" fill="#888780">Pre-requisite — not NPCI's decision</text>
+
+<line x1="340" y1="76" x2="340" y2="106" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 2 -->
+<rect x="215" y="106" width="250" height="56" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="128" text-anchor="middle" dominant-baseline="central" fill="#3C3489">NPCI membership application</text>
+<text font-size="12" x="340" y="148" text-anchor="middle" dominant-baseline="central" fill="#534AB7">Board resolution, CBS details, SLA</text>
+
+<line x1="340" y1="162" x2="340" y2="192" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 3 -->
+<rect x="215" y="192" width="250" height="56" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="214" text-anchor="middle" dominant-baseline="central" fill="#3C3489">UPI gateway development</text>
+<text font-size="12" x="340" y="234" text-anchor="middle" dominant-baseline="central" fill="#534AB7">ISO 8583, mTLS, VPA resolver</text>
+
+<line x1="340" y1="248" x2="340" y2="278" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 4: Certification -->
+<rect x="215" y="278" width="250" height="56" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="300" text-anchor="middle" dominant-baseline="central" fill="#085041">NPCI certification testing</text>
+<text font-size="12" x="340" y="320" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">~200 mandatory test cases</text>
+
+<!-- Fail path -->
+<line x1="215" y1="306" x2="130" y2="306" stroke="#A32D2D" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="120" y="295" text-anchor="middle" fill="#5F5E5A">fail →</text>
+<text font-size="12" x="120" y="308" text-anchor="middle" fill="#5F5E5A">fix &amp;</text>
+<text font-size="12" x="120" y="321" text-anchor="middle" fill="#5F5E5A">re-test</text>
+<path d="M130 326 L130 214 L215 214" fill="none" stroke="#A32D2D" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+
+<line x1="340" y1="334" x2="340" y2="364" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 5: UAT -->
+<rect x="215" y="364" width="250" height="56" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="386" text-anchor="middle" dominant-baseline="central" fill="#085041">UAT + limited pilot</text>
+<text font-size="12" x="340" y="406" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">Live txns, capped volume</text>
+
+<line x1="340" y1="420" x2="340" y2="450" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 6: Routing -->
+<rect x="215" y="450" width="250" height="56" rx="8" fill="#FAECE7" stroke="#F0997B" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="472" text-anchor="middle" dominant-baseline="central" fill="#712B13">NPCI routing table update</text>
+<text font-size="12" x="340" y="492" text-anchor="middle" dominant-baseline="central" fill="#993C1D">IFSC → TCP endpoint, cert pinned</text>
+
+<line x1="340" y1="506" x2="340" y2="536" stroke="#B4B2A9" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+<!-- Phase 7: Go-live -->
+<rect x="215" y="536" width="250" height="44" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="340" y="558" text-anchor="middle" dominant-baseline="central" fill="#085041">Go-live — full volume</text>
+
+<!-- Right annotation -->
+<rect x="490" y="192" width="172" height="170" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<text font-size="12" x="500" y="212" fill="#5F5E5A">What the bank builds:</text>
+<text font-size="12" x="500" y="230" fill="#5F5E5A">— UPI CBS adapter</text>
+<text font-size="12" x="500" y="248" fill="#5F5E5A">— VPA registry (maps</text>
+<text font-size="12" x="500" y="264" fill="#5F5E5A">  handle → account)</text>
+<text font-size="12" x="500" y="282" fill="#5F5E5A">— MPIN vault (HSM)</text>
+<text font-size="12" x="500" y="300" fill="#5F5E5A">— Dedup store (RRN)</text>
+<text font-size="12" x="500" y="318" fill="#5F5E5A">— 30s SLA watchdog</text>
+<text font-size="12" x="500" y="336" fill="#5F5E5A">— Recon file handler</text>
+<line x1="465" y1="270" x2="492" y2="270" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+<!-- Timeline note -->
+<rect x="20" y="560" width="185" height="44" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<text font-size="12" x="30" y="578" fill="#5F5E5A">Typical timeline:</text>
+<text font-size="12" x="30" y="595" fill="#5F5E5A">6–18 months end to end</text>
+</svg>

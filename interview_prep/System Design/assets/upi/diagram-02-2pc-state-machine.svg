@@ -1,0 +1,76 @@
+<svg width="100%" viewBox="0 0 680 560" role="img">
+<title>UPI 2-phase commit state machine</title>
+<desc>Six transaction states: INITIATED, DEBIT_PENDING, DEBITED (pivot), CREDIT_PENDING, COMPLETED, FAILED+REVERSED</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- Phase boxes -->
+<rect x="20" y="40" width="300" height="200" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="6 3"/>
+<text font-size="12" x="170" y="60" text-anchor="middle" fill="#888780">Phase 1 — Prepare (debit)</text>
+<rect x="360" y="40" width="300" height="200" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="6 3"/>
+<text font-size="12" x="510" y="60" text-anchor="middle" fill="#888780">Phase 2 — Commit (credit)</text>
+
+<!-- INITIATED -->
+<rect x="80" y="80" width="130" height="50" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="145" y="109" text-anchor="middle" dominant-baseline="central" fill="#444441">INITIATED</text>
+
+<!-- DEBIT_PENDING -->
+<rect x="80" y="175" width="130" height="50" rx="8" fill="#FAECE7" stroke="#F0997B" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="145" y="200" text-anchor="middle" dominant-baseline="central" fill="#712B13">DEBIT_PENDING</text>
+
+<!-- DEBITED (pivot) -->
+<rect x="270" y="175" width="130" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text font-size="14" font-weight="500" x="335" y="193" text-anchor="middle" dominant-baseline="central" fill="#3C3489">DEBITED</text>
+<text font-size="12" x="335" y="212" text-anchor="middle" dominant-baseline="central" fill="#534AB7">← pivot point</text>
+
+<!-- CREDIT_PENDING -->
+<rect x="420" y="80" width="130" height="50" rx="8" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="485" y="109" text-anchor="middle" dominant-baseline="central" fill="#633806">CREDIT_PENDING</text>
+
+<!-- COMPLETED -->
+<rect x="420" y="175" width="130" height="50" rx="8" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="485" y="204" text-anchor="middle" dominant-baseline="central" fill="#085041">COMPLETED</text>
+
+<!-- FAILED -->
+<rect x="80" y="300" width="130" height="50" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="145" y="329" text-anchor="middle" dominant-baseline="central" fill="#791F1F">FAILED + REVERSED</text>
+
+<!-- Transitions -->
+<line x1="145" y1="130" x2="145" y2="173" stroke="#888780" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="152" y="156" fill="#5F5E5A">ReqPay sent</text>
+
+<line x1="210" y1="200" x2="268" y2="200" stroke="#993C1D" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="238" y="194" text-anchor="middle" fill="#5F5E5A">RespPay 00</text>
+
+<path d="M335 175 L335 105 L418 105" fill="none" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text font-size="12" x="390" y="94" text-anchor="middle" fill="#5F5E5A">ReqPay credit</text>
+
+<line x1="485" y1="130" x2="485" y2="173" stroke="#854F0B" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="530" y="157" fill="#5F5E5A">RespPay 00</text>
+
+<line x1="145" y1="225" x2="145" y2="298" stroke="#A32D2D" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)" fill="none"/>
+<text font-size="12" x="80" y="267" fill="#5F5E5A">timeout/</text>
+<text font-size="12" x="80" y="280" fill="#5F5E5A">bank error</text>
+
+<path d="M420 105 Q370 70 370 105 Q370 135 420 135" fill="none" stroke="#A32D2D" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+<text font-size="12" x="348" y="116" text-anchor="middle" fill="#5F5E5A">retry</text>
+
+<!-- Pivot insight -->
+<rect x="240" y="260" width="280" height="80" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="12" x="250" y="278" fill="#0C447C">Key insight: once state = DEBITED,</text>
+<text font-size="12" x="250" y="295" fill="#0C447C">NPCI will retry credit forever (with</text>
+<text font-size="12" x="250" y="312" fill="#0C447C">backoff) until success or T+1 settlement.</text>
+<text font-size="12" x="250" y="329" fill="#0C447C">There is NO rollback past this point.</text>
+
+<!-- Recovery -->
+<rect x="20" y="395" width="640" height="80" rx="8" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="0.5"/>
+<text font-size="12" x="30" y="413" fill="#5F5E5A">Recovery timer: NPCI runs a reconciliation sweep every 30s. Any txn stuck in DEBIT_PENDING or CREDIT_PENDING</text>
+<text font-size="12" x="30" y="430" fill="#5F5E5A">for &gt;30s gets a ReqTxnStatusInq sent to the bank. If bank confirms debit, state advances. If no response after</text>
+<text font-size="12" x="30" y="447" fill="#5F5E5A">3 retries, NPCI sends a reversal (ReqReversal) to undo the payer debit. Payee never gets credited either.</text>
+<text font-size="12" x="30" y="464" fill="#5F5E5A">This is why UPI shows "pending" — the txn is genuinely in an in-flight state being reconciled.</text>
+
+<text font-size="12" x="20" y="500" fill="#888780">Solid arrows = happy path   Dashed = error/retry path</text>
+</svg>

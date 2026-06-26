@@ -1,0 +1,86 @@
+<svg width="100%" viewBox="0 0 680 340" role="img">
+<title>UPI VPA handle ownership map</title>
+<desc>Shows which PSP bank owns which UPI handle suffixes: PhonePe/@ybl/@axl, GPay/@oksbi/@okaxis/@okicici/@okhdfcbank, Paytm/@paytm, BHIM/@upi</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- Headers -->
+<text font-size="12" x="110" y="24" text-anchor="middle" fill="#888780">TPAP app</text>
+<text font-size="12" x="370" y="24" text-anchor="middle" fill="#888780">VPA handle(s)</text>
+<text font-size="12" x="580" y="24" text-anchor="middle" fill="#888780">PSP bank</text>
+<line x1="40" y1="32" x2="640" y2="32" stroke="#D3D1C7" stroke-width="0.5"/>
+
+<!-- Row 1: PhonePe -->
+<rect x="40" y="44" width="140" height="44" rx="6" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="110" y="66" text-anchor="middle" dominant-baseline="central" fill="#3C3489">PhonePe</text>
+
+<rect x="200" y="44" width="80" height="44" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="240" y="60" text-anchor="middle" dominant-baseline="central" fill="#444441">@ybl</text>
+<text font-size="12" x="240" y="78" text-anchor="middle" dominant-baseline="central" fill="#888780">legacy</text>
+
+<rect x="290" y="44" width="80" height="44" rx="6" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="330" y="60" text-anchor="middle" dominant-baseline="central" fill="#3C3489">@ibl</text>
+<text font-size="12" x="330" y="78" text-anchor="middle" dominant-baseline="central" fill="#534AB7">ICICI era</text>
+
+<rect x="380" y="44" width="80" height="44" rx="6" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="420" y="60" text-anchor="middle" dominant-baseline="central" fill="#085041">@axl</text>
+<text font-size="12" x="420" y="78" text-anchor="middle" dominant-baseline="central" fill="#0F6E56">current</text>
+
+<rect x="490" y="44" width="150" height="44" rx="6" fill="#E1F5EE" stroke="#5DCAA5" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="565" y="66" text-anchor="middle" dominant-baseline="central" fill="#085041">Axis Bank (now)</text>
+
+<!-- Row 2: Google Pay -->
+<rect x="40" y="110" width="140" height="44" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="110" y="132" text-anchor="middle" dominant-baseline="central" fill="#0C447C">Google Pay</text>
+
+<rect x="200" y="110" width="72" height="44" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="236" y="126" text-anchor="middle" dominant-baseline="central" fill="#0C447C">@oksbi</text>
+<text font-size="12" x="236" y="144" text-anchor="middle" dominant-baseline="central" fill="#185FA5">SBI</text>
+
+<rect x="280" y="110" width="72" height="44" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="316" y="126" text-anchor="middle" dominant-baseline="central" fill="#0C447C">@okaxis</text>
+<text font-size="12" x="316" y="144" text-anchor="middle" dominant-baseline="central" fill="#185FA5">Axis</text>
+
+<rect x="360" y="110" width="80" height="44" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="400" y="126" text-anchor="middle" dominant-baseline="central" fill="#0C447C">@okicici</text>
+<text font-size="12" x="400" y="144" text-anchor="middle" dominant-baseline="central" fill="#185FA5">ICICI</text>
+
+<rect x="448" y="110" width="100" height="44" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="498" y="126" text-anchor="middle" dominant-baseline="central" fill="#0C447C">@okhdfcbank</text>
+<text font-size="12" x="498" y="144" text-anchor="middle" dominant-baseline="central" fill="#185FA5">HDFC</text>
+
+<text font-size="12" x="568" y="127" fill="#5F5E5A">Multi-PSP</text>
+<text font-size="12" x="568" y="142" fill="#5F5E5A">resilience</text>
+
+<!-- Row 3: Paytm -->
+<rect x="40" y="176" width="140" height="44" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="110" y="198" text-anchor="middle" dominant-baseline="central" fill="#633806">Paytm app</text>
+
+<rect x="200" y="176" width="100" height="44" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="250" y="192" text-anchor="middle" dominant-baseline="central" fill="#633806">@paytm</text>
+<text font-size="12" x="250" y="210" text-anchor="middle" dominant-baseline="central" fill="#854F0B">restricted</text>
+
+<rect x="310" y="176" width="80" height="44" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="350" y="192" text-anchor="middle" dominant-baseline="central" fill="#633806">@ptaxis</text>
+<text font-size="12" x="350" y="210" text-anchor="middle" dominant-baseline="central" fill="#854F0B">migrating</text>
+
+<text font-size="12" x="420" y="192" fill="#5F5E5A">Paytm Payments Bank</text>
+<text font-size="12" x="420" y="208" fill="#5F5E5A">lost NPCI licence 2024</text>
+
+<!-- Row 4: BHIM -->
+<rect x="40" y="242" width="140" height="44" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="110" y="264" text-anchor="middle" dominant-baseline="central" fill="#444441">BHIM (NPCI's own)</text>
+
+<rect x="200" y="242" width="80" height="44" rx="6" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+<text font-size="14" font-weight="500" x="240" y="264" text-anchor="middle" dominant-baseline="central" fill="#444441">@upi</text>
+
+<text font-size="12" x="310" y="258" fill="#5F5E5A">NPCI itself acts</text>
+<text font-size="12" x="310" y="274" fill="#5F5E5A">as PSP for BHIM</text>
+
+<!-- Key insight bar -->
+<rect x="40" y="302" width="600" height="28" rx="6" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+<text font-size="12" x="340" y="320" text-anchor="middle" fill="#0C447C">The @handle suffix = the PSP bank's NPCI member namespace. TPAPs rent it. Banks own it.</text>
+</svg>
