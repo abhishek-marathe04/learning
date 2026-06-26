@@ -1,4 +1,4 @@
-<svg width="100%" viewBox="0 0 680 620" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 620" role="img">
 <title>UPI bank onboarding process</title>
 <desc>Seven-phase flowchart: RBI licence → NPCI membership → UPI gateway dev → certification → UAT → routing table update → go-live</desc>
 <defs>

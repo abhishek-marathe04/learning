@@ -1,4 +1,4 @@
-<svg width="100%" viewBox="0 0 680 580" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 580" role="img">
 <title>UPI payment flow — full sequence diagram</title>
 <desc>Shows the 8-step message flow between payer app, NPCI switch, payee app, payer bank, and payee bank for a UPI transaction</desc>
 <defs>

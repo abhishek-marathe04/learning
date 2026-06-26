@@ -1,4 +1,4 @@
-<svg width="100%" viewBox="0 0 680 340" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 340" role="img">
 <title>UPI VPA handle ownership map</title>
 <desc>Shows which PSP bank owns which UPI handle suffixes: PhonePe/@ybl/@axl, GPay/@oksbi/@okaxis/@okicici/@okhdfcbank, Paytm/@paytm, BHIM/@upi</desc>
 <defs>

@@ -1,4 +1,4 @@
-<svg width="100%" viewBox="0 0 680 560" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 560" role="img">
 <title>UPI 2-phase commit state machine</title>
 <desc>Six transaction states: INITIATED, DEBIT_PENDING, DEBITED (pivot), CREDIT_PENDING, COMPLETED, FAILED+REVERSED</desc>
 <defs>
