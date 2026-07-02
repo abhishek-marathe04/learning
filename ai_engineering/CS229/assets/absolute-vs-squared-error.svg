@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 340" role="img">
+  <title>Absolute value vs squared error — differentiability comparison</title>
+  <desc>Two side-by-side plots. Left: absolute value |error| showing a V-shape with a sharp corner at zero. Right: squared error showing a smooth parabola. Demonstrates why squared error is preferred for gradient descent.</desc>
+
+  <!-- Background panels -->
+  <rect x="20" y="20" width="300" height="280" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+  <rect x="360" y="20" width="300" height="280" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+
+  <!-- Panel titles -->
+  <text x="170" y="48" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="500" fill="#791F1F">|error| — has sharp corner</text>
+  <text x="510" y="48" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="500" fill="#27500A">error² — smooth bowl</text>
+
+  <!-- LEFT CHART axes -->
+  <line x1="60" y1="250" x2="280" y2="250" stroke="#888" stroke-width="0.8"/>
+  <line x1="170" y1="70" x2="170" y2="255" stroke="#888" stroke-width="0.8"/>
+  <text x="170" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">error = 0</text>
+  <text x="60" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">−3</text>
+  <text x="280" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">+3</text>
+
+  <!-- LEFT: V-shape |error| -->
+  <polyline points="60,250 170,90 280,250" fill="rgba(226,75,74,0.12)" stroke="#E24B4A" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Sharp corner callout -->
+  <circle cx="170" cy="90" r="5" fill="none" stroke="#E24B4A" stroke-width="2"/>
+  <line x1="175" y1="86" x2="215" y2="68" stroke="#E24B4A" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="218" y="66" font-family="sans-serif" font-size="10" fill="#A32D2D">sharp corner!</text>
+  <text x="218" y="78" font-family="sans-serif" font-size="10" fill="#A32D2D">no single slope here</text>
+
+  <!-- Slope labels -->
+  <text x="100" y="185" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#A32D2D" transform="rotate(-47, 100, 185)">slope = −1</text>
+  <text x="235" y="185" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#A32D2D" transform="rotate(47, 235, 185)">slope = +1</text>
+
+  <!-- RIGHT CHART axes -->
+  <line x1="400" y1="250" x2="620" y2="250" stroke="#888" stroke-width="0.8"/>
+  <line x1="510" y1="70" x2="510" y2="255" stroke="#888" stroke-width="0.8"/>
+  <text x="510" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">error = 0</text>
+  <text x="400" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">−3</text>
+  <text x="620" y="268" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">+3</text>
+
+  <!-- RIGHT: smooth parabola error² -->
+  <path d="M400,245 C420,240 450,210 475,175 C490,155 500,130 510,92 C520,130 530,155 545,175 C570,210 600,240 620,245" fill="rgba(42,120,214,0.10)" stroke="#2a78d6" stroke-width="2.5" stroke-linejoin="round" fill-rule="nonzero"/>
+
+  <!-- Smooth bottom callout -->
+  <circle cx="510" cy="92" r="5" fill="#1baf7a" stroke="#fff" stroke-width="1.5"/>
+  <line x1="515" y1="88" x2="550" y2="70" stroke="#1baf7a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="553" y="68" font-family="sans-serif" font-size="10" fill="#27500A">perfectly smooth</text>
+  <text x="553" y="80" font-family="sans-serif" font-size="10" fill="#27500A">slope = 0 at bottom</text>
+
+  <!-- Bottom labels -->
+  <text x="170" y="300" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#791F1F">GD asks "slope?" → ambiguous</text>
+  <text x="510" y="300" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#27500A">GD asks "slope?" → always clear</text>
+</svg>

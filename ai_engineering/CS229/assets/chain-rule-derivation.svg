@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480" role="img">
+  <title>Full chain rule derivation: from J(theta) to (h(x)-y)*xj</title>
+  <desc>Step-by-step derivation showing how differentiating the cost function J(theta) = half times sum of squared errors leads to the gradient (h(x)-y) times xj via power rule and chain rule.</desc>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Step 1 -->
+  <rect x="40" y="20" width="600" height="56" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.5"/>
+  <text x="340" y="42" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5F5E5A">Start: compute ∂J/∂θⱼ  where</text>
+  <text x="340" y="62" text-anchor="middle" font-family="monospace" font-size="15" font-weight="500" fill="#2C2C2A">J(θ) = ½ · Σ ( h(x) − y )²</text>
+
+  <line x1="340" y1="76" x2="340" y2="104" stroke="#888" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="380" y="94" font-family="sans-serif" font-size="10" fill="#888">power rule: d/dx[u²] = 2u·du/dx</text>
+
+  <!-- Step 2 -->
+  <rect x="40" y="108" width="600" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="340" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#185FA5">Apply power rule to the square:</text>
+  <text x="340" y="152" text-anchor="middle" font-family="monospace" font-size="15" font-weight="500" fill="#0C447C">= ½ · 2 · (h(x)−y) · ∂/∂θⱼ(h(x)−y)</text>
+
+  <line x1="340" y1="164" x2="340" y2="192" stroke="#888" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="380" y="182" font-family="sans-serif" font-size="10" fill="#888">½ × 2 = 1, they cancel cleanly</text>
+
+  <!-- Step 3 -->
+  <rect x="40" y="196" width="600" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="340" y="218" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#185FA5">After cancellation (this is why ½ was placed there):</text>
+  <text x="340" y="240" text-anchor="middle" font-family="monospace" font-size="15" font-weight="500" fill="#0C447C">= (h(x)−y) · ∂/∂θⱼ(h(x)−y)</text>
+
+  <line x1="340" y1="252" x2="340" y2="280" stroke="#888" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="380" y="270" font-family="sans-serif" font-size="10" fill="#888">expand h(x) = Σ θₖxₖ, freeze all θ except θⱼ</text>
+
+  <!-- Step 4 -->
+  <rect x="40" y="284" width="600" height="72" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="340" y="306" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#854F0B">Partial derivative of h(x) w.r.t. θⱼ:</text>
+  <text x="340" y="326" text-anchor="middle" font-family="monospace" font-size="13" fill="#633806">h(x) = θ₀x₀ + θ₁x₁ + ... + θⱼxⱼ + ...</text>
+  <text x="340" y="346" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#854F0B">All other terms are constants → die.  θⱼxⱼ → xⱼ.  y → 0.</text>
+
+  <line x1="340" y1="356" x2="340" y2="384" stroke="#888" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- Final result -->
+  <rect x="80" y="388" width="520" height="68" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+  <text x="340" y="412" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#085041">Final result:</text>
+  <text x="340" y="442" text-anchor="middle" font-family="monospace" font-size="20" font-weight="500" fill="#085041">∂J/∂θⱼ  =  ( h(x) − y ) · xⱼ</text>
+
+  <!-- Side annotations -->
+  <text x="18" y="148" font-family="sans-serif" font-size="10" fill="#888" transform="rotate(-90,18,148)">chain rule</text>
+  <text x="18" y="300" font-family="sans-serif" font-size="10" fill="#888" transform="rotate(-90,18,300)">partial trick</text>
+</svg>

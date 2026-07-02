@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" role="img">
+  <title>Contour shape — narrow ellipses vs round ellipses and feature scaling</title>
+  <desc>Two contour plots side by side. Left: elongated narrow ellipses indicating features with very different scales, causing gradient descent to zigzag slowly. Right: circular contours from feature-normalized data, gradient descent goes straight to center.</desc>
+
+  <defs>
+    <marker id="arrs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#1baf7a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Left panel -->
+  <rect x="20" y="20" width="300" height="280" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+  <text x="170" y="44" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="500" fill="#791F1F">Without feature scaling</text>
+  <text x="170" y="58" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#A32D2D">Features at very different scales → elongated ellipses</text>
+
+  <!-- Elongated ellipses -->
+  <ellipse cx="170" cy="160" rx="125" ry="28" fill="none" stroke="#E24B4A" stroke-width="1" opacity="0.3"/>
+  <ellipse cx="170" cy="160" rx="100" ry="22" fill="none" stroke="#E24B4A" stroke-width="1" opacity="0.45"/>
+  <ellipse cx="170" cy="160" rx="72" ry="16" fill="none" stroke="#E24B4A" stroke-width="1.5" opacity="0.6"/>
+  <ellipse cx="170" cy="160" rx="44" ry="10" fill="none" stroke="#E24B4A" stroke-width="1.5" opacity="0.75"/>
+  <ellipse cx="170" cy="160" rx="18" ry="4" fill="none" stroke="#E24B4A" stroke-width="2" opacity="0.9"/>
+
+  <!-- Zigzag GD path -->
+  <polyline points="50,148 100,170 130,152 152,162 162,158 168,160 170,160"
+    fill="none" stroke="#E24B4A" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#arrs)"/>
+  <circle cx="50" cy="148" r="5" fill="#E24B4A" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="170" cy="160" r="6" fill="#1baf7a" stroke="#fff" stroke-width="2"/>
+
+  <!-- Axis labels -->
+  <text x="170" y="272" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">θ₁ (sq ft, range 500-3000)</text>
+  <text x="32" y="160" font-family="sans-serif" font-size="10" fill="#888">θ₀</text>
+
+  <!-- Annotation -->
+  <rect x="30" y="236" width="280" height="52" rx="6" fill="rgba(226,75,74,0.08)" stroke="#F09595" stroke-width="0.5"/>
+  <text x="170" y="254" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="500" fill="#791F1F">GD zigzags slowly down the long axis</text>
+  <text x="170" y="270" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#A32D2D">Mixes sq ft (1000s) + bedrooms (1-5)</text>
+  <text x="170" y="283" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#A32D2D">Gradients very unequal → inefficient steps</text>
+
+  <!-- Right panel -->
+  <rect x="360" y="20" width="300" height="280" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+  <text x="510" y="44" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="500" fill="#27500A">With feature scaling</text>
+  <text x="510" y="58" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#3B6D11">Normalized features → circular/round ellipses</text>
+
+  <!-- Circular ellipses -->
+  <ellipse cx="510" cy="160" rx="110" ry="100" fill="none" stroke="#1baf7a" stroke-width="1" opacity="0.3"/>
+  <ellipse cx="510" cy="160" rx="82" ry="74" fill="none" stroke="#1baf7a" stroke-width="1" opacity="0.45"/>
+  <ellipse cx="510" cy="160" rx="56" ry="50" fill="none" stroke="#1baf7a" stroke-width="1.5" opacity="0.6"/>
+  <ellipse cx="510" cy="160" rx="32" ry="28" fill="none" stroke="#1baf7a" stroke-width="1.5" opacity="0.75"/>
+  <ellipse cx="510" cy="160" rx="12" ry="10" fill="none" stroke="#1baf7a" stroke-width="2" opacity="0.9"/>
+
+  <!-- Straight GD path -->
+  <line x1="400" y1="70" x2="510" y2="158" stroke="#1baf7a" stroke-width="2" marker-end="url(#arrg)"/>
+  <circle cx="400" cy="70" r="5" fill="#1baf7a" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="510" cy="160" r="6" fill="#1baf7a" stroke="#fff" stroke-width="2"/>
+
+  <!-- Axis labels -->
+  <text x="510" y="272" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">θ₁ (normalized, range −1 to 1)</text>
+  <text x="372" y="160" font-family="sans-serif" font-size="10" fill="#888">θ₀</text>
+
+  <!-- Annotation -->
+  <rect x="370" y="236" width="280" height="52" rx="6" fill="rgba(27,175,122,0.08)" stroke="#97C459" stroke-width="0.5"/>
+  <text x="510" y="254" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="500" fill="#27500A">GD goes almost straight to center</text>
+  <text x="510" y="270" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#3B6D11">All features in same range → equal gradients</text>
+  <text x="510" y="283" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#3B6D11">Converges much faster</text>
+</svg>
