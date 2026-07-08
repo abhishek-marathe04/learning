@@ -125,6 +125,56 @@ Let p = P(heads), the unknown parameter.
 
 **Why this matters in ML:** You almost never know θ — that's the whole point of training. What you *do* have is fixed, already-collected data. So training is always "likelihood mode" — data is locked in, and you search over θ-space to find the value that makes your fixed, already-happened data look as plausible as possible. This is precisely **Maximum Likelihood Estimation (MLE)**.
 
+### 10. Log-likelihood, and why maximizing it collapses into minimizing squared error
+
+**Why take the log at all?** With m training examples, L(θ) is a product of m small numbers (each roughly 0.001–0.008 in our toy example) — multiplying hundreds of these together is numerically painful, and products are messy to differentiate (would require the product rule across all m terms). The fix: log is **monotonically increasing**, so whatever θ maximizes L(θ) also maximizes log(L(θ)) — the location of the peak doesn't move, only the shape of the curve changes. This new function is the **log-likelihood**:
+
+$$\ell(\theta) = \log L(\theta)$$
+
+**Step 1 — product becomes a sum.** Using log(a×b×c) = log a + log b + log c:
+
+$$\ell(\theta) = \log \prod_{i=1}^{m} p(y^{(i)}|x^{(i)};\theta) = \sum_{i=1}^{m} \log p(y^{(i)}|x^{(i)};\theta)$$
+
+Sums are far easier to differentiate term-by-term than products (derivative of a sum = sum of derivatives, no product rule needed).
+
+**Step 2 — expand the log of the Gaussian density.** Substitute the actual density formula, then split using log(A×B) = log A + log B:
+
+$$\ell(\theta) = \sum_{i=1}^{m} \left[ \log\frac{1}{\sqrt{2\pi}\,\sigma} + \log\exp\left(-\frac{(y^{(i)}-\theta^Tx^{(i)})^2}{2\sigma^2}\right) \right]$$
+
+Since log(exp(x)) = x (log and exp are inverse operations), the second piece simplifies directly:
+
+$$\ell(\theta) = \sum_{i=1}^{m} \left[ \log\frac{1}{\sqrt{2\pi}\,\sigma} - \frac{(y^{(i)}-\theta^Tx^{(i)})^2}{2\sigma^2} \right]$$
+
+**Step 3 — split into two separate sums.** The first piece, `log(1/(√(2π)σ))`, doesn't involve i at all (σ is fixed) — summing the same constant m times is just m× that constant. The second piece's `1/(2σ²)` is also constant w.r.t. i, so it pulls outside the sum:
+
+$$\ell(\theta) = \underbrace{m \log\frac{1}{\sqrt{2\pi}\,\sigma}}_{\text{Term 1 — constant}} \;-\; \underbrace{\frac{1}{2\sigma^2}\sum_{i=1}^{m}(y^{(i)}-\theta^Tx^{(i)})^2}_{\text{Term 2 — depends on }\theta}$$
+
+**Step 4 — Term 1 is irrelevant to finding the best θ.** Term 1 depends only on m and σ (both fixed) — it contains **no θ anywhere**. No matter what θ is plugged in, Term 1 never changes.
+
+*Analogy:* if the entire road you're trying to find the highest point on sits on a platform uniformly raised 100m above sea level, that flat offset doesn't change *where* the highest point on the road is — it just shifts every point up equally. Term 1 is exactly that flat platform: part of the total ℓ(θ) value, but irrelevant to *which* θ maximizes it. So **maximizing ℓ(θ) over θ reduces to maximizing just Term 2.**
+
+**Step 5 — the negative sign flips maximize into minimize.** Term 2 is:
+
+$$-\frac{1}{2\sigma^2}\sum_{i=1}^{m}(y^{(i)}-\theta^Tx^{(i)})^2$$
+
+`1/(2σ²)` is a positive constant (σ² is always positive), and `Σ(y⁽ⁱ⁾−θᵀx⁽ⁱ⁾)²` is a sum of squares — always ≥ 0. So Term 2 = −(positive constant)×(something ≥ 0), meaning **Term 2 is always ≤ 0.**
+
+To make ℓ(θ) = Term1 + Term2 as large as possible, and since Term 1 is fixed, Term 2 must be made **as large as possible** — i.e., as close to zero as it can get (its maximum achievable value, since it can never be positive).
+
+*Concrete numeric intuition:* if Σ(errors)² = 100, Term 2 = −(constant)×100, fairly negative. If Σ(errors)² = 10, Term 2 = −(constant)×10, less negative (bigger). If Σ(errors)² = 0 (a hypothetical perfect fit), Term 2 = 0, its ceiling. So **smaller sum-of-squared-errors → larger (better) Term 2 → larger (better) ℓ(θ)**. The negative sign is what flips "maximize the sum of squares" into "minimize the sum of squares."
+
+**Step 6 — arriving at J(θ).** The entire MLE problem collapses to:
+
+$$\arg\max_\theta \, \ell(\theta) \;=\; \arg\min_\theta \, \sum_{i=1}^{m}(y^{(i)}-\theta^Tx^{(i)})^2$$
+
+(The positive constant `1/(2σ²)` scaling the sum doesn't change *where* the minimum is located — same reasoning as Term 1 being irrelevant.) Ng defines this minimization target — with a conventional ½ factor included purely so that later differentiation cleanly cancels the 2 that comes down from differentiating a square — as the **cost function**:
+
+$$J(\theta) = \frac{1}{2}\sum_{i=1}^{m}(y^{(i)}-\theta^Tx^{(i)})^2$$
+
+**The punchline:** ordinary least-squares regression — "minimize sum of squared errors," which can look like an arbitrary, "seems reasonable" choice when first encountered — turns out to be **mathematically forced** the moment you assume Gaussian, i.i.d., zero-mean noise. Maximizing likelihood under that assumption *is* minimizing squared error. Least squares isn't a heuristic; it's the MLE solution to an explicit probabilistic model.
+
+**Footnote — σ² never mattered for finding θ.** Throughout this derivation, σ² only ever appeared as a positive scaling constant (in Term 1, and multiplying the sum in Term 2) — it never influenced *which* θ is optimal. This confirms the earlier point: **you don't need to know the true noise level to find the best-fit θ**; whatever σ² actually is, the MLE θ comes out identical. σ² would only matter later for reasoning about *confidence* in the estimate, not for finding θ itself.
+
 ## Worked Examples
 
 ### Example 1 — Computing density at specific points (single house, hand-derivation)
@@ -259,13 +309,16 @@ $$L(\theta) = \prod_{i=1}^{2} p(y^{(i)}|x^{(i)};\theta) = p(500 \mid 10; \theta)
 - **L(θ) is a relative score, not a probability distribution over θ** — it does not integrate to 1 over all θ. Only compare L(θ) values against each other; don't read a single L(θ) value as a "percentage chance θ is correct."
 - **Training an ML model = always operating in "likelihood mode"** — data is fixed and given, θ is the unknown being searched over to maximize plausibility of that fixed data.
 - **∏ (product notation) is to multiplication what Σ is to addition** — a compact way to write "repeat this operation across an index range."
-- **The big reveal (previewed, not yet derived):** maximizing L(θ) under Gaussian noise assumptions is mathematically equivalent to minimizing sum of squared errors — this is *why* least-squares linear regression is the "correct" approach under this probabilistic model, not just a convenient heuristic.
+- **Taking the log converts a product into a sum** (log(a×b×c) = log a + log b + log c), making the likelihood numerically tractable and easy to differentiate — and since log is monotonically increasing, the θ that maximizes L(θ) also maximizes ℓ(θ) = log L(θ); the peak's location never moves.
+- **The log-likelihood splits into two terms:** a constant term (independent of θ, so irrelevant to the argmax) and a term with a negative sign in front of a sum-of-squared-errors. That negative sign is precisely what flips "maximize" into "minimize."
+- **The big reveal — fully derived:** maximizing ℓ(θ) under Gaussian, i.i.d., zero-mean noise reduces exactly to minimizing Σ(y⁽ⁱ⁾−θᵀx⁽ⁱ⁾)², i.e., minimizing J(θ) = ½Σ(y⁽ⁱ⁾−θᵀx⁽ⁱ⁾)². Least-squares linear regression is the MLE solution under this explicit probabilistic model — not an arbitrary heuristic.
+- **σ² never affects which θ is optimal** — it only ever appears as a positive scaling constant throughout the derivation (confirmed algebraically, not just asserted). It would matter later for reasoning about *confidence* in the estimate, but not for finding θ itself.
 
 ## Open Questions / Next Steps
 
-- **Log-likelihood derivation:** taking ℓ(θ) = log L(θ) to convert the product into a sum (numerically tractable, easier to differentiate), and showing step-by-step how maximizing ℓ(θ) reduces exactly to minimizing J(θ) = ½Σ(y⁽ⁱ⁾−θᵀx⁽ⁱ⁾)² — the formal link between MLE and least squares. This was offered at multiple points in the session but not yet covered.
-- Natural follow-on after that: how σ² algebraically drops out of the argmax during the log-likelihood derivation (mentioned as a preview — worth confirming explicitly with algebra).
-- Possible future thread: frequentist vs. Bayesian treatment of θ (hinted at via the semicolon-vs-bar notation discussion).
+- **Next natural topic in the lecture arc:** having established the probabilistic justification for least-squares (linear regression, "Regression 1" in Ng's framing), the lecture moves to **locally weighted regression (LWR)** — a non-parametric method that fits a separate weighted regression around each query point rather than one global θ. Worth covering with the same first-principles, numeric-example approach.
+- Also upcoming per Ng's lecture arc: the transition from linear regression's probabilistic setup to **logistic regression** — swapping the Gaussian assumption on y for a Bernoulli assumption (since y becomes binary), and re-deriving a new cost function via the same MLE machinery just built here. This is a strong candidate for direct comparison against today's derivation, since the mechanics (likelihood → log-likelihood → argmax) repeat almost identically.
+- Possible future thread: frequentist vs. Bayesian treatment of θ (hinted at via the semicolon-vs-bar notation discussion earlier in this session).
 
 ## References
 
