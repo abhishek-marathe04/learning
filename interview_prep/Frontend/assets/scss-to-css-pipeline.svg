@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="560" viewBox="0 0 680 560" role="img">
+<title>How a .scss file becomes a browser-ready CSS file</title>
+<desc>Five stage pipeline: Button.module.scss source, the Sass compiler resolves variables and nesting into plain CSS, then CSS Modules hashes class names into a scoped mapping, and the result is extracted into a single index.css linked in HTML</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<rect x="150" y="30" width="380" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+<text x="340" y="50" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#444441">Button.module.scss</text>
+<text x="340" y="70" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" fill="#5F5E5A">Variables, nesting, mixins</text>
+
+<line x1="340" y1="86" x2="340" y2="126" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="150" y="126" width="380" height="66" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="340" y="150" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#712B13">Sass compiler</text>
+<text x="340" y="170" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" fill="#993C1D">Invoked by Vite via the sass package</text>
+
+<line x1="340" y1="192" x2="340" y2="232" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="190" y="232" width="300" height="56" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<text x="340" y="252" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#712B13">Plain CSS</text>
+<text x="340" y="272" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" fill="#993C1D">Flat selectors, no Sass syntax left</text>
+
+<line x1="340" y1="288" x2="340" y2="328" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="150" y="328" width="380" height="66" rx="8" fill="#FBEAF0" stroke="#993556" stroke-width="0.5"/>
+<text x="340" y="352" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#72243E">CSS Modules</text>
+<text x="340" y="372" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" fill="#993556">Hashes class names, generates JS mapping object</text>
+
+<line x1="340" y1="394" x2="340" y2="434" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="150" y="434" width="380" height="66" rx="8" fill="#FBEAF0" stroke="#993556" stroke-width="0.5"/>
+<text x="340" y="458" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="14" font-weight="500" fill="#72243E">index-8a2f1c.css</text>
+<text x="340" y="478" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="12" fill="#993556">Extracted, linked via rel=stylesheet</text>
+</svg>
