@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>The Inference Machine</title>
+<style>
+:root {
+  --bg:      #0B1120;
+  --card:    #15203A;
+  --card2:   #1C2A4A;
+  --border:  #30416A;
+  --text:    #EAF1FB;
+  --muted:   #94A7C6;
+  --compute: #FF8C42;
+  --memory:  #2DD4E8;
+  --green:   #3DDC84;
+  --purple:  #A78BFA;
+  --red:     #F4707E;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ── TOP BAR ── */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#topbar-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--memory);
+}
+
+#nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.nav-btn:hover { background: var(--border); color: var(--text); }
+.nav-btn.active {
+  background: var(--memory);
+  border-color: var(--memory);
+  color: #000;
+}
+
+#act-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+#topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#seed-label { font-size: 13px; color: var(--muted); }
+#seed-input {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 80px;
+}
+
+#global-reset-btn {
+  background: var(--card2);
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#global-reset-btn:hover { background: var(--red); color: #000; }
+
+/* ── MAIN CONTENT ── */
+#content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
+.view {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: row;
+}
+.view.active { display: flex; }
+
+/* ── CONTROL RAIL ── */
+.rail {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rail h3 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-row label {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.control-row label span {
+  color: var(--text);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+input[type=range] {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 6px;
+  background: var(--card2);
+  border-radius: 3px;
+  outline: none;
+  border: 1px solid var(--border);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--memory);
+  cursor: pointer;
+}
+
+select {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.seg-control {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  flex: 1;
+  background: var(--card2);
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 4px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.seg-btn + .seg-btn { border-left: 1px solid var(--border); }
+.seg-btn.active { background: var(--memory); color: #000; }
+
+.action-btn {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.12s;
+}
+.action-btn:hover { background: var(--border); }
+.action-btn.danger { border-color: var(--red); color: var(--red); }
+.action-btn.danger:hover { background: var(--red); color: #000; }
+
+/* ── STAGE ── */
+.stage {
+  flex: 1;
+  padding: 24px 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── BIG READOUT GRID ── */
+.readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.readout-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.readout-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.readout-value {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.readout-value.lg { font-size: 72px; }
+.readout-value.sm { font-size: 32px; }
+.readout-value.cyan { color: var(--memory); }
+.readout-value.orange { color: var(--compute); }
+.readout-value.green { color: var(--green); }
+.readout-value.red { color: var(--red); }
+.readout-value.purple { color: var(--purple); }
+
+.readout-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.badge.memory { background: var(--memory); color: #000; }
+.badge.compute { background: var(--compute); color: #000; }
+.badge.oom { background: var(--red); color: #fff; }
+
+/* ── OOM BORDER PULSE ── */
+@keyframes oomPulse {
+  0%   { box-shadow: 0 0 0 0px var(--red); }
+  50%  { box-shadow: 0 0 0 8px var(--red); }
+  100% { box-shadow: 0 0 0 0px var(--red); }
+}
+.oom-pulse { animation: oomPulse 0.6s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-seg, .pod-mem-bar-fill, .batch-slot-fill { transition: none; }
+  .oom-pulse { animation: none; }
+}
+
+/* ── FOOTER ── */
+#footer {
+  height: 28px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ── HELP OVERLAY ── */
+#help-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#help-overlay.visible { display: flex; }
+
+#help-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 40px;
+  min-width: 420px;
+}
+
+#help-box h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--memory);
+  margin-bottom: 20px;
+}
+
+#help-box table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#help-box td {
+  padding: 6px 12px;
+  font-size: 15px;
+}
+
+#help-box td:first-child {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--memory);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#help-box tr:nth-child(even) td { background: var(--card2); }
+
+#help-close {
+  margin-top: 20px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  float: right;
+}
+
+/* ── VIEW 1: FIT ── */
+#fit-bar-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+#fit-bar-wrap {
+  position: relative;
+  height: 80px;
+}
+
+#fit-bar {
+  display: flex;
+  height: 60px;
+  border-radius: 6px;
+  overflow: visible;
+  position: relative;
+}
+
+.bar-seg {
+  height: 100%;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+}
+
+#bar-weights { background: var(--compute); border-radius: 6px 0 0 6px; }
+#bar-kv { background: var(--memory); }
+#bar-overhead { background: #3a4a6a; }
+#bar-oom { background: var(--red); border-radius: 0 6px 6px 0; }
+
+#capacity-line {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  background: var(--text);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+#capacity-label {
+  position: absolute;
+  top: -24px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+#fit-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+#oom-flag {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(244,112,126,0.15);
+  border: 2px solid var(--red);
+  border-radius: 8px;
+}
+
+#oom-flag.visible { display: flex; }
+
+#oom-flag .oom-text {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--red);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+#oom-flag .oom-sub {
+  font-size: 16px;
+  color: var(--red);
+}
+
+/* ── VIEW 2: SPEED ROOFLINE SVG ── */
+#roofline-svg {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── VIEW 3: BATCHING ── */
+#batching-panels {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.batch-panel {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.batch-panel h2 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.batch-slots {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.batch-slot {
+  flex: 1;
+  border-radius: 4px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.batch-slot-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  transition: width 0.1s;
+}
+
+.batch-slot-label {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  padding: 0 8px;
+  color: rgba(255,255,255,0.85);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.batch-slot.idle .batch-slot-fill { background: transparent; }
+.batch-slot.idle .batch-slot-label { color: var(--muted); }
+
+.batch-queue-area {
+  height: 80px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow: hidden;
+  align-content: flex-start;
+}
+
+.queue-chip {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--purple);
+  opacity: 0.7;
+}
+
+.batch-metrics {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.batch-metric-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.batch-metric-value {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ── VIEW 4: FLEET ── */
+#fleet-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: flex-start;
+}
+
+.pod-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.pod-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--purple);
+}
+
+.pod-mem-bar-bg {
+  height: 12px;
+  background: var(--card2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pod-mem-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.2s;
+}
+
+.pod-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pod-stats span { color: var(--text); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+.pod-prefix-list {
+  font-size: 11px;
+  color: var(--muted);
+  min-height: 16px;
+}
+
+.pod-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.05s;
+}
+.pod-flash.hit { background: rgba(61,220,132,0.25); }
+.pod-flash.miss { background: rgba(244,112,126,0.25); }
+
+#fleet-metrics {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+#sparkline-svg {
+  width: 280px;
+  height: 60px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="topbar-title">⬡ The Inference Machine</div>
+  <nav id="nav">
+    <button class="nav-btn active" data-view="fit" onclick="switchView('fit')">1 Fit</button>
+    <button class="nav-btn" data-view="speed" onclick="switchView('speed')">2 Speed</button>
+    <button class="nav-btn" data-view="batching" onclick="switchView('batching')">3 Batching</button>
+    <button class="nav-btn" data-view="fleet" onclick="switchView('fleet')">4 Fleet</button>
+  </nav>
+  <div id="act-label">Act I — The single GPU · Act II — The fleet</div>
+  <div id="topbar-right">
+    <label id="seed-label" for="seed-input">Seed</label>
+    <input id="seed-input" type="number" value="42" min="0" max="999999">
+    <button id="global-reset-btn" onclick="globalReset()">R Reset</button>
+    <button id="help-toggle-btn" onclick="toggleHelp()" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;">?</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- ══════════════════ VIEW 1: FIT ══════════════════ -->
+  <div class="view active" id="view-fit">
+    <div class="rail" id="rail-fit">
+      <h3>Model</h3>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Preset <span id="fit-model-val"></span></label>
+          <select id="fit-model" onchange="fitModelChange()">
+            <option value="l3_8b">Llama-3 8B</option>
+            <option value="l3_70b">Llama-3 70B</option>
+            <option value="l31_405b">Llama-3.1 405B</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-row" id="fit-custom-row" style="display:none">
+          <label>Params (B) <span id="fit-params-val">8</span></label>
+          <input type="range" id="fit-params" min="1" max="500" value="8" oninput="fitUpdate()">
+        </div>
+      </div>
+
+      <h3>Quantization (T)</h3>
+      <div class="seg-control" id="fit-quant-ctrl">
+        <button class="seg-btn active" data-q="fp16" onclick="fitSetQuant('fp16')">FP16</button>
+        <button class="seg-btn" data-q="int8" onclick="fitSetQuant('int8')">INT8</button>
+        <button class="seg-btn" data-q="int4" onclick="fitSetQuant('int4')">INT4</button>
+      </div>
+
+      <div class="control-group">
+        <div class="control-row">
+          <label>Context L (tokens) <span id="fit-ctx-val">2048</span></label>
+          <input type="range" id="fit-ctx" min="0" max="100" value="30" oninput="fitUpdate()">
+        </div>
+        <div class="control-row">
+          <label>Concurrent seqs B <span id="fit-b-val">1</span></label>
+          <input type="range" id="fit-b" min="1" max="256" value="1" oninput="fitUpdate()">
+        </div>
+      </div>
+
+      <h3>Hardware</h3>
+      <div class="control-group">
+        <div class="control-row">
+          <label>GPU</label>
+          <select id="fit-gpu" onchange="fitUpdate()">
+            <option value="a100">A100 80GB</option>
+            <option value="h100" selected>H100 80GB</option>
+            <option value="h200">H200 141GB</option>
+            <option value="b200">B200 192GB</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>GPU count N <span id="fit-n-val">1</span></label>
+          <input type="range" id="fit-n" min="1" max="8" value="1" step="1" oninput="fitUpdate()">
+        </div>
+      </div>
+
+      <button class="action-btn danger" onclick="fitBreakIt()">B — Break it live</button>
+      <button class="action-btn" onclick="fitReset()">R — Reset view</button>
+    </div>
+
+    <div class="stage" id="stage-fit">
+      <div id="fit-bar-container">
+        <div id="fit-bar-wrap">
+          <div id="fit-bar">
+            <div class="bar-seg" id="bar-weights"></div>
+            <div class="bar-seg" id="bar-kv"></div>
+            <div class="bar-seg" id="bar-overhead"></div>
+            <div class="bar-seg" id="bar-oom"></div>
+          </div>
+          <div id="capacity-line"><div id="capacity-label"></div></div>
+        </div>
+        <div id="fit-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--compute)"></div>Weights</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--memory)"></div>KV Cache</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3a4a6a"></div>Overhead</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Over capacity</div>
+        </div>
+        <div id="oom-flag">
+          <div class="oom-text">⚠ OUT OF MEMORY</div>
+          <div class="oom-sub" id="oom-over-text"></div>
+        </div>
+      </div>
+
+      <div class="readouts">
+        <div class="readout-card">
+          <div class="readout-label">Weights</div>
+          <div class="readout-value sm orange mono" id="fit-r-weights">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">KV Cache</div>
+          <div class="readout-value sm cyan mono" id="fit-r-kv">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Total / Capacity</div>
+          <div class="readout-value sm mono" id="fit-r-total">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">KV per token</div>
+          <div class="readout-value sm mono" id="fit-r-kvtok">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Max users @ this context</div>
+          <div class="readout-value sm green mono" id="fit-r-maxusers">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Max context @ this users</div>
+          <div class="readout-value sm green mono" id="fit-r-maxctx">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ VIEW 2: SPEED ══════════════════ -->
+  <div class="view" id="view-speed">
+    <div class="rail" id="rail-speed">
+      <h3>GPU Preset</h3>
+      <div class="control-row">
+        <select id="speed-gpu" onchange="speedGpuChange()">
+          <option value="a100">A100 80GB</option>
+          <option value="h100" selected>H100 80GB</option>
+          <option value="h200">H200 141GB</option>
+          <option value="b200">B200 192GB</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <div class="control-row">
+          <label>Compute (TFLOP/s) <span id="speed-compute-val">990</span></label>
+          <input type="range" id="speed-compute" min="100" max="2500" value="990" oninput="speedUpdate()">
+        </div>
+        <div class="control-row">
+          <label>Bandwidth (TB/s) <span id="speed-bw-val">3.35</span></label>
+          <input type="range" id="speed-bw" min="100" max="900" value="335" oninput="speedUpdate()">
+        </div>
+      </div>
+
+      <h3>Model</h3>
+      <div class="control-row">
+        <select id="speed-model" onchange="speedUpdate()">
+          <option value="l3_8b">Llama-3 8B</option>
+          <option value="l3_70b" selected>Llama-3 70B</option>
+          <option value="l31_405b">Llama-3.1 405B</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <div class="control-row">
+          <label>Batch size b <span id="speed-b-val">1</span></label>
+          <input type="range" id="speed-b" min="1" max="512" value="1" oninput="speedUpdate()">
+        </div>
+        <div class="control-row">
+          <label>Context L (tokens) <span id="speed-ctx-val">2048</span></label>
+          <input type="range" id="speed-ctx" min="0" max="100" value="30" oninput="speedUpdate()">
+        </div>
+      </div>
+
+      <button class="action-btn danger" onclick="speedBreakIt()">B — Sweep compute</button>
+      <button class="action-btn" onclick="speedToggleBatchHelper()" id="speed-t-btn">T — Show batch helper</button>
+      <button class="action-btn" onclick="speedReset()">R — Reset view</button>
+    </div>
+
+    <div class="stage" id="stage-speed">
+      <div class="readouts">
+        <div class="readout-card" style="min-width:220px">
+          <div class="readout-label">Tokens / sec (per user)</div>
+          <div class="readout-value lg cyan mono" id="speed-r-toks">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Aggregate tok/s</div>
+          <div class="readout-value sm mono" id="speed-r-agg">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Arith. Intensity</div>
+          <div class="readout-value sm mono" id="speed-r-ai">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Compute util %</div>
+          <div class="readout-value sm mono" id="speed-r-util">—</div>
+        </div>
+        <div class="readout-card" id="speed-bound-card">
+          <div class="readout-label">Bound by</div>
+          <div id="speed-bound-badge" class="badge memory">MEMORY</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Ridge point (AI)</div>
+          <div class="readout-value sm mono" id="speed-r-ridge">—</div>
+          <div class="readout-sub">FLOPs/byte where mem→compute</div>
+        </div>
+      </div>
+      <svg id="roofline-svg" viewBox="0 0 700 340" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <!-- ══════════════════ VIEW 3: BATCHING ══════════════════ -->
+  <div class="view" id="view-batching">
+    <div class="rail" id="rail-batching">
+      <h3>Simulation</h3>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Arrival rate (req/s) <span id="batch-rate-val">2.0</span></label>
+          <input type="range" id="batch-rate" min="1" max="20" value="4" step="1" oninput="batchUpdate()">
+        </div>
+        <div class="control-row">
+          <label>Batch slots G <span id="batch-g-val">8</span></label>
+          <input type="range" id="batch-g" min="2" max="16" value="8" step="1" oninput="batchUpdate()">
+        </div>
+      </div>
+      <h3>Speed</h3>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Sim speed <span id="batch-speed-val">1×</span></label>
+          <input type="range" id="batch-speed" min="1" max="8" value="1" step="1" oninput="batchUpdate()">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="action-btn" onclick="simToggle()" id="sim-play-btn">Space — Pause</button>
+        <button class="action-btn" onclick="simStep()">Step</button>
+      </div>
+      <button class="action-btn danger" onclick="batchBreakIt()">B — Inject long req</button>
+      <button class="action-btn" onclick="batchReset()">R — Reset view</button>
+    </div>
+
+    <div class="stage" id="stage-batching">
+      <div style="font-size:12px;color:var(--muted);display:flex;gap:20px;align-items:center">
+        <span>Sim tick: <span class="mono" id="batch-tick">0</span></span>
+        <span>Clock: <span class="mono" id="batch-clock">0.00s</span></span>
+      </div>
+      <div id="batching-panels">
+        <div class="batch-panel" id="static-panel">
+          <h2 style="color:var(--compute)">STATIC BATCHING</h2>
+          <div style="font-size:12px;color:var(--muted)">Queue:</div>
+          <div class="batch-queue-area" id="static-queue"></div>
+          <div class="batch-slots" id="static-slots"></div>
+          <div class="batch-metrics">
+            <div class="batch-metric">
+              <div class="batch-metric-label">Util %</div>
+              <div class="batch-metric-value orange mono" id="static-util">0%</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Throughput</div>
+              <div class="batch-metric-value orange mono" id="static-tput">0 t/s</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Completed</div>
+              <div class="batch-metric-value mono" id="static-done">0</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Avg wait</div>
+              <div class="batch-metric-value mono" id="static-wait">0s</div>
+            </div>
+          </div>
+        </div>
+        <div class="batch-panel" id="cont-panel">
+          <h2 style="color:var(--green)">CONTINUOUS BATCHING</h2>
+          <div style="font-size:12px;color:var(--muted)">Queue:</div>
+          <div class="batch-queue-area" id="cont-queue"></div>
+          <div class="batch-slots" id="cont-slots"></div>
+          <div class="batch-metrics">
+            <div class="batch-metric">
+              <div class="batch-metric-label">Util %</div>
+              <div class="batch-metric-value green mono" id="cont-util">0%</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Throughput</div>
+              <div class="batch-metric-value green mono" id="cont-tput">0 t/s</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Completed</div>
+              <div class="batch-metric-value mono" id="cont-done">0</div>
+            </div>
+            <div class="batch-metric">
+              <div class="batch-metric-label">Avg wait</div>
+              <div class="batch-metric-value mono" id="cont-wait">0s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ VIEW 4: FLEET ══════════════════ -->
+  <div class="view" id="view-fleet">
+    <div class="rail" id="rail-fleet">
+      <h3>Load</h3>
+      <div class="control-group">
+        <div class="control-row">
+          <label>QPS <span id="fleet-qps-val">4</span></label>
+          <input type="range" id="fleet-qps" min="1" max="30" value="4" oninput="fleetUpdate()">
+        </div>
+        <div class="control-row">
+          <label>Pods N <span id="fleet-n-val">6</span></label>
+          <input type="range" id="fleet-n" min="2" max="10" value="6" step="1" oninput="fleetRebuild()">
+        </div>
+        <div class="control-row">
+          <label>Slot cap / pod <span id="fleet-cap-val">8</span></label>
+          <input type="range" id="fleet-cap" min="2" max="20" value="8" step="1" oninput="fleetUpdate()">
+        </div>
+      </div>
+      <h3>Router (T)</h3>
+      <div class="seg-control" id="fleet-router-ctrl">
+        <button class="seg-btn active" data-r="rr" onclick="fleetSetRouter('rr')">Round-robin</button>
+        <button class="seg-btn" data-r="ll" onclick="fleetSetRouter('ll')">Least-load</button>
+        <button class="seg-btn" data-r="ca" onclick="fleetSetRouter('ca')">Cache-aware</button>
+      </div>
+      <h3>Speed</h3>
+      <div class="control-row">
+        <label>Sim speed <span id="fleet-speed-val">1×</span></label>
+        <input type="range" id="fleet-speed" min="1" max="8" value="1" step="1" oninput="fleetUpdate()">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="action-btn" onclick="fleetToggle()" id="fleet-play-btn">Space — Pause</button>
+      </div>
+      <button class="action-btn danger" onclick="fleetBreakIt()">B — Max load</button>
+      <button class="action-btn" onclick="fleetReset()">R — Reset view</button>
+    </div>
+
+    <div class="stage" id="stage-fleet">
+      <div id="fleet-metrics">
+        <div class="readout-card">
+          <div class="readout-label">Cache hit %</div>
+          <div class="readout-value sm green mono" id="fleet-r-hit">0%</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">p50 TTFT (ms)</div>
+          <div class="readout-value sm mono" id="fleet-r-p50">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">p95 TTFT (ms)</div>
+          <div class="readout-value sm red mono" id="fleet-r-p95">—</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Throughput</div>
+          <div class="readout-value sm mono" id="fleet-r-tput">0</div>
+        </div>
+        <div class="readout-card">
+          <div class="readout-label">Drops/OOM</div>
+          <div class="readout-value sm red mono" id="fleet-r-drops">0</div>
+        </div>
+        <div class="readout-card" style="flex-direction:row;align-items:center;gap:8px">
+          <div>
+            <div class="readout-label">TTFT sparkline</div>
+            <svg id="sparkline-svg" viewBox="0 0 280 60"></svg>
+          </div>
+        </div>
+      </div>
+      <div id="fleet-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div id="footer">
+  GPU/model numbers are approximate marketing figures — for teaching scale, not spec-sheet precision. · Press ? for keyboard shortcuts.
+</div>
+
+<!-- HELP OVERLAY -->
+<div id="help-overlay">
+  <div id="help-box">
+    <h2>Keyboard Shortcuts</h2>
+    <table>
+      <tr><td>1 / 2 / 3 / 4</td><td>Jump to Fit / Speed / Batching / Fleet</td></tr>
+      <tr><td>Space</td><td>Play / Pause simulation</td></tr>
+      <tr><td>R</td><td>Reset current view</td></tr>
+      <tr><td>→ / ←</td><td>Nudge primary slider up / down</td></tr>
+      <tr><td>B</td><td>"Break it live" action</td></tr>
+      <tr><td>T</td><td>Toggle primary toggle (quant / batch helper / router)</td></tr>
+      <tr><td>+ / -</td><td>Sim speed up / down (Batching, Fleet)</td></tr>
+      <tr><td>?</td><td>Show / hide this overlay</td></tr>
+    </table>
+    <button id="help-close" onclick="toggleHelp()">Close</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  SEEDED PRNG — mulberry32
+// ═══════════════════════════════════════════════════════════════
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function getSeed() {
+  return parseInt(document.getElementById('seed-input').value) || 42;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GPU & MODEL REGISTRIES
+// ═══════════════════════════════════════════════════════════════
+const GPUS = {
+  a100: { label: 'A100 80GB',  vram: 80,  bw: 2.0,  tflops: 312  },
+  h100: { label: 'H100 80GB',  vram: 80,  bw: 3.35, tflops: 990  },
+  h200: { label: 'H200 141GB', vram: 141, bw: 4.8,  tflops: 990  },
+  b200: { label: 'B200 192GB', vram: 192, bw: 8.0,  tflops: 2250 },
+};
+
+const MODELS = {
+  l3_8b:    { label: 'Llama-3 8B',    params: 8,   layers: 32,  kv_heads: 8,  head_dim: 128 },
+  l3_70b:   { label: 'Llama-3 70B',   params: 70,  layers: 80,  kv_heads: 8,  head_dim: 128 },
+  l31_405b: { label: 'Llama-3.1 405B',params: 405, layers: 126, kv_heads: 8,  head_dim: 128 },
+};
+
+function customModel(params_B) {
+  const layers = Math.max(16, Math.min(140, Math.round(9 * Math.pow(params_B, 0.33))));
+  return { label: 'Custom (est.)', params: params_B, layers, kv_heads: 8, head_dim: 128 };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CORE FORMULAS
+// ═══════════════════════════════════════════════════════════════
+const QUANT_BPP = { fp16: 2, int8: 1, int4: 0.5 };
+
+function bytesPerParam(quant) { return QUANT_BPP[quant] || 2; }
+
+function calcFit(model, quant, L, B, gpu, N) {
+  const bpp = bytesPerParam(quant);
+  const weightsBytes   = model.params * 1e9 * bpp;
+  const kvBytesPerTok  = 2 * model.layers * model.kv_heads * model.head_dim * 2;
+  const kvBytes        = kvBytesPerTok * L * B;
+  const overheadBytes  = 0.15 * (weightsBytes + kvBytes);
+  const totalBytes     = weightsBytes + kvBytes + overheadBytes;
+  const capacityBytes  = gpu.vram * 1e9 * N;
+
+  // Max users at this context (B that fills capacity)
+  // totalBytes(B) = (w + kv_per_tok*L*B)*1.15
+  // cap = (w + kv_per_tok*L*B_max)*1.15
+  // B_max = (cap/1.15 - w) / (kv_per_tok * L)
+  const maxUsers = L > 0 ? Math.max(0, Math.floor((capacityBytes / 1.15 - weightsBytes) / (kvBytesPerTok * L))) : Infinity;
+  const maxCtxTokens = B > 0 ? Math.max(0, Math.floor((capacityBytes / 1.15 - weightsBytes) / (kvBytesPerTok * B))) : Infinity;
+
+  return { weightsBytes, kvBytesPerTok, kvBytes, overheadBytes, totalBytes, capacityBytes, maxUsers, maxCtxTokens };
+}
+
+function calcRoofline(model, gpu, b, L) {
+  const weightsBytes   = model.params * 1e9 * 2; // always FP16 for roofline
+  const kvBytesPerTok  = 2 * model.layers * model.kv_heads * model.head_dim * 2;
+  const bytesReadPerStep = weightsBytes + kvBytesPerTok * L * b;
+  const flopsPerStep     = 2 * model.params * 1e9 * b;
+  const t_mem            = bytesReadPerStep / (gpu.bw * 1e12);
+  const t_compute        = flopsPerStep     / (gpu.tflops * 1e12);
+  const tStep            = Math.max(t_mem, t_compute);
+  const boundBy          = t_mem >= t_compute ? 'MEMORY' : 'COMPUTE';
+  const tokPerSecUser    = 1 / tStep;
+  const tokPerSecTotal   = b / tStep;
+  const AI               = flopsPerStep / bytesReadPerStep;
+  const computeUtilPct   = 100 * (t_compute / tStep);
+  const ridgePoint       = (gpu.tflops * 1e12) / (gpu.bw * 1e12);
+  return { t_mem, t_compute, tStep, boundBy, tokPerSecUser, tokPerSecTotal, AI, computeUtilPct, ridgePoint };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FORMATTING HELPERS
+// ═══════════════════════════════════════════════════════════════
+function fmtGB(bytes) {
+  return (bytes / 1e9).toFixed(1) + ' GB';
+}
+function fmtKB(bytes) {
+  return bytes >= 1e6 ? (bytes/1e6).toFixed(0)+' MB' : (bytes/1e3).toFixed(0)+' KB';
+}
+function fmtToks(t) { return Math.round(t).toLocaleString(); }
+function fmtPct(p) { return p.toFixed(1) + '%'; }
+function fmtAI(ai) { return ai.toFixed(2); }
+
+// log-scale context slider: maps 0..100 -> 512..131072 (nice snaps)
+const CTX_SNAPS = [512,1024,2048,4096,8192,16384,32768,65536,128000];
+function sliderToCtx(v) {
+  const idx = Math.round(v / 100 * (CTX_SNAPS.length-1));
+  return CTX_SNAPS[Math.max(0, Math.min(CTX_SNAPS.length-1, idx))];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+let currentView = 'fit';
+
+function switchView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HELP OVERLAY
+// ═══════════════════════════════════════════════════════════════
+function toggleHelp() {
+  document.getElementById('help-overlay').classList.toggle('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GLOBAL RESET
+// ═══════════════════════════════════════════════════════════════
+function globalReset() {
+  fitReset();
+  speedReset();
+  batchReset();
+  fleetReset();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW 1 — FIT
+// ═══════════════════════════════════════════════════════════════
+let fitBreakAnim = null;
+let fitQuant = 'fp16';
+
+function fitModelChange() {
+  const m = document.getElementById('fit-model').value;
+  document.getElementById('fit-custom-row').style.display = m === 'custom' ? '' : 'none';
+  fitUpdate();
+}
+
+function fitSetQuant(q) {
+  fitQuant = q;
+  document.querySelectorAll('#fit-quant-ctrl .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.q === q));
+  fitUpdate();
+}
+
+function fitGetModel() {
+  const m = document.getElementById('fit-model').value;
+  if (m === 'custom') {
+    const p = parseInt(document.getElementById('fit-params').value);
+    document.getElementById('fit-params-val').textContent = p;
+    return customModel(p);
+  }
+  return MODELS[m];
+}
+
+function fitUpdate() {
+  const model = fitGetModel();
+  const gpu   = GPUS[document.getElementById('fit-gpu').value];
+  const N     = parseInt(document.getElementById('fit-n').value);
+  const L     = sliderToCtx(parseInt(document.getElementById('fit-ctx').value));
+  const B     = parseInt(document.getElementById('fit-b').value);
+
+  document.getElementById('fit-ctx-val').textContent = L.toLocaleString();
+  document.getElementById('fit-b-val').textContent = B;
+  document.getElementById('fit-n-val').textContent = N;
+
+  const r = calcFit(model, fitQuant, L, B, gpu, N);
+
+  // Segments are clamped so none individually crosses the capacity line.
+  // The red oom segment shows the overage after the line.
+  const oom = r.totalBytes > r.capacityBytes;
+  const scale = Math.max(r.totalBytes, r.capacityBytes) * 1.3;
+  const capPct = (r.capacityBytes / scale * 100).toFixed(2);
+  const wCapped  = Math.min(r.weightsBytes, r.capacityBytes);
+  const kvCapped = Math.min(r.kvBytes,      Math.max(0, r.capacityBytes - r.weightsBytes));
+  const ohCapped = Math.min(r.overheadBytes,Math.max(0, r.capacityBytes - r.weightsBytes - r.kvBytes));
+  const oomBytes = Math.max(0, r.totalBytes - r.capacityBytes);
+  const oomMax   = scale - r.capacityBytes;
+  const wPct   = (wCapped  / scale * 100).toFixed(2);
+  const kvPct  = (kvCapped / scale * 100).toFixed(2);
+  const ohPct  = (ohCapped / scale * 100).toFixed(2);
+  const oomPct = oom ? Math.min(oomMax, oomBytes) / scale * 100 : 0;
+
+  document.getElementById('bar-weights').style.width  = wPct + '%';
+  document.getElementById('bar-kv').style.width       = kvPct + '%';
+  document.getElementById('bar-overhead').style.width = ohPct + '%';
+  document.getElementById('bar-oom').style.width      = oomPct.toFixed(2) + '%';
+  document.getElementById('capacity-line').style.left = capPct + '%';
+  document.getElementById('capacity-label').textContent = 'VRAM cap: ' + fmtGB(r.capacityBytes);
+
+  // OOM flag
+  const flag = document.getElementById('oom-flag');
+  flag.classList.toggle('visible', oom);
+  if (oom) {
+    document.getElementById('oom-over-text').textContent =
+      'Over by ' + fmtGB(r.totalBytes - r.capacityBytes);
+    document.getElementById('fit-bar-container').classList.add('oom-pulse');
+    setTimeout(() => document.getElementById('fit-bar-container').classList.remove('oom-pulse'), 700);
+  }
+
+  // Readouts
+  document.getElementById('fit-r-weights').textContent = fmtGB(r.weightsBytes);
+  document.getElementById('fit-r-kv').textContent      = fmtGB(r.kvBytes);
+  document.getElementById('fit-r-total').textContent   = fmtGB(r.totalBytes) + ' / ' + fmtGB(r.capacityBytes);
+  document.getElementById('fit-r-kvtok').textContent   = fmtKB(r.kvBytesPerTok);
+  document.getElementById('fit-r-maxusers').textContent = r.maxUsers === Infinity ? '∞' : r.maxUsers.toLocaleString();
+  document.getElementById('fit-r-maxctx').textContent   = r.maxCtxTokens === Infinity ? '∞' : r.maxCtxTokens.toLocaleString() + ' tok';
+}
+
+function fitBreakIt() {
+  if (fitBreakAnim) { clearInterval(fitBreakAnim); fitBreakAnim = null; }
+  const slider = document.getElementById('fit-b');
+  slider.value = 1;
+  fitUpdate();
+  fitBreakAnim = setInterval(() => {
+    const cur = parseInt(slider.value);
+    if (cur >= 256) { clearInterval(fitBreakAnim); fitBreakAnim = null; return; }
+    slider.value = Math.min(256, cur + Math.ceil(cur * 0.15 + 1));
+    fitUpdate();
+  }, 60);
+}
+
+function fitReset() {
+  if (fitBreakAnim) { clearInterval(fitBreakAnim); fitBreakAnim = null; }
+  document.getElementById('fit-model').value = 'l3_70b';
+  document.getElementById('fit-gpu').value   = 'h100';
+  document.getElementById('fit-n').value     = '1';
+  document.getElementById('fit-ctx').value   = '30';
+  document.getElementById('fit-b').value     = '1';
+  fitModelChange();
+  fitSetQuant('fp16');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW 2 — SPEED
+// ═══════════════════════════════════════════════════════════════
+let speedBreakAnim = null;
+let speedBatchHelper = false;
+
+function speedGpuChange() {
+  const g = document.getElementById('speed-gpu').value;
+  if (g !== 'custom' && GPUS[g]) {
+    const gpu = GPUS[g];
+    document.getElementById('speed-compute').value = gpu.tflops;
+    document.getElementById('speed-bw').value = Math.round(gpu.bw * 100);
+  }
+  speedUpdate();
+}
+
+function speedGetGpu() {
+  return {
+    tflops: parseInt(document.getElementById('speed-compute').value),
+    bw: parseInt(document.getElementById('speed-bw').value) / 100,
+  };
+}
+
+function speedUpdate() {
+  const gpu   = speedGetGpu();
+  const model = MODELS[document.getElementById('speed-model').value];
+  const b     = parseInt(document.getElementById('speed-b').value);
+  const L     = sliderToCtx(parseInt(document.getElementById('speed-ctx').value));
+
+  document.getElementById('speed-compute-val').textContent = gpu.tflops;
+  document.getElementById('speed-bw-val').textContent = gpu.bw.toFixed(2);
+  document.getElementById('speed-b-val').textContent = b;
+  document.getElementById('speed-ctx-val').textContent = L.toLocaleString();
+
+  const r = calcRoofline(model, gpu, b, L);
+
+  document.getElementById('speed-r-toks').textContent  = fmtToks(r.tokPerSecUser);
+  document.getElementById('speed-r-agg').textContent   = fmtToks(r.tokPerSecTotal) + ' tok/s';
+  document.getElementById('speed-r-ai').textContent    = fmtAI(r.AI);
+  document.getElementById('speed-r-util').textContent  = fmtPct(r.computeUtilPct);
+  document.getElementById('speed-r-ridge').textContent = r.ridgePoint.toFixed(0);
+
+  const badge = document.getElementById('speed-bound-badge');
+  badge.textContent = r.boundBy;
+  badge.className = 'badge ' + r.boundBy.toLowerCase();
+
+  drawRoofline(model, gpu, b, L, r);
+}
+
+function drawRoofline(model, gpu, b, L, r) {
+  const svg = document.getElementById('roofline-svg');
+  const W = 700, H = 340;
+  const PAD = { l: 70, r: 30, t: 30, b: 50 };
+  const pw = W - PAD.l - PAD.r;
+  const ph = H - PAD.t - PAD.b;
+
+  // Log-log axes
+  // X: arithmetic intensity 0.01 .. 10000
+  // Y: throughput (TFLOP/s) 0.001 .. max_compute * 2
+  const xMin = 0.01, xMax = 10000;
+  const yMin = 0.001, yMax = gpu.tflops * 2;
+
+  function xp(ai) { return PAD.l + (Math.log10(ai) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin)) * pw; }
+  function yp(tf) { return PAD.t + ph - (Math.log10(tf) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin)) * ph; }
+
+  // throughput of a given AI on the roofline
+  function rooflineY(ai) {
+    return Math.min(gpu.tflops, ai * gpu.bw);
+  }
+
+  let out = `<defs>
+    <clipPath id="rclip"><rect x="${PAD.l}" y="${PAD.t}" width="${pw}" height="${ph}"/></clipPath>
+  </defs>`;
+
+  // Background
+  out += `<rect width="${W}" height="${H}" fill="var(--card)" rx="8"/>`;
+
+  // Grid lines
+  const xTicks = [0.01,0.1,1,10,100,1000,10000];
+  const yTicks = [];
+  for (let e = -3; e <= 4; e++) yTicks.push(Math.pow(10, e));
+
+  for (const x of xTicks) {
+    const cx = xp(x);
+    if (cx < PAD.l || cx > PAD.l+pw) continue;
+    out += `<line x1="${cx}" y1="${PAD.t}" x2="${cx}" y2="${PAD.t+ph}" stroke="var(--border)" stroke-width="1" opacity="0.5"/>`;
+    out += `<text x="${cx}" y="${PAD.t+ph+16}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="monospace">${x<1?x:x>=1000?(x/1000)+'k':x}</text>`;
+  }
+  for (const y of yTicks) {
+    const cy = yp(y);
+    if (cy < PAD.t || cy > PAD.t+ph) continue;
+    out += `<line x1="${PAD.l}" y1="${cy}" x2="${PAD.l+pw}" y2="${cy}" stroke="var(--border)" stroke-width="1" opacity="0.5"/>`;
+    const lab = y>=1000?(y/1000)+'k':y>=1?y:y>=0.1?y.toFixed(1):y.toFixed(3);
+    out += `<text x="${PAD.l-6}" y="${cy+4}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="monospace">${lab}</text>`;
+  }
+
+  // Axis labels
+  out += `<text x="${PAD.l + pw/2}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="13">Arithmetic Intensity (FLOPs / byte)</text>`;
+  out += `<text x="14" y="${PAD.t + ph/2}" text-anchor="middle" fill="var(--muted)" font-size="13" transform="rotate(-90,14,${PAD.t+ph/2})">Throughput (TFLOP/s)</text>`;
+
+  // ── Roofline lines ──
+  // Memory-bound diagonal: throughput = AI * bw, up to ridge
+  const ridge = r.ridgePoint;
+  // Draw memory diagonal from xMin up to ridge
+  const x1m = xMin, y1m = rooflineY(xMin);
+  const x2m = Math.min(ridge, xMax), y2m = rooflineY(x2m);
+  out += `<g clip-path="url(#rclip)">`;
+  out += `<line x1="${xp(x1m)}" y1="${yp(y1m)}" x2="${xp(x2m)}" y2="${yp(y2m)}"
+    stroke="var(--memory)" stroke-width="3" stroke-linecap="round"/>`;
+  // Memory label: anchor at a mid-diagonal point, offset above line
+  const memLabelX = 0.3;
+  out += `<text x="${xp(memLabelX)}" y="${yp(rooflineY(memLabelX))-10}" fill="var(--memory)" font-size="12" text-anchor="middle">memory-bound (${gpu.bw.toFixed(2)} TB/s)</text>`;
+
+  // Compute ceiling: flat line from ridge to xMax
+  if (ridge < xMax) {
+    out += `<line x1="${xp(Math.max(ridge,xMin))}" y1="${yp(gpu.tflops)}" x2="${xp(xMax)}" y2="${yp(gpu.tflops)}"
+      stroke="var(--compute)" stroke-width="3" stroke-linecap="round"/>`;
+    out += `<text x="${xp(3000)}" y="${yp(gpu.tflops)-8}" fill="var(--compute)" font-size="12" text-anchor="middle">compute-bound (${gpu.tflops} TFLOP/s)</text>`;
+  }
+
+  // Ridge point
+  if (ridge >= xMin && ridge <= xMax) {
+    out += `<circle cx="${xp(ridge)}" cy="${yp(gpu.tflops)}" r="6" fill="var(--text)" stroke="var(--border)" stroke-width="2"/>`;
+    out += `<text x="${xp(ridge)}" y="${yp(gpu.tflops)-12}" fill="var(--text)" font-size="11" text-anchor="middle">ridge=${ridge.toFixed(0)}</text>`;
+  }
+
+  // Current operating point
+  const opAI = Math.max(xMin, Math.min(xMax, r.AI));
+  const opY  = Math.max(yMin, Math.min(yMax, rooflineY(opAI)));
+  const dotColor = r.boundBy === 'MEMORY' ? 'var(--memory)' : 'var(--compute)';
+  out += `<circle cx="${xp(opAI)}" cy="${yp(opY)}" r="10" fill="${dotColor}" stroke="var(--bg)" stroke-width="3"/>`;
+  out += `<text x="${xp(opAI)+14}" y="${yp(opY)+4}" fill="${dotColor}" font-size="13" font-weight="bold">AI=${r.AI.toFixed(1)}</text>`;
+
+  out += `</g>`;
+
+  // Axes borders
+  out += `<rect x="${PAD.l}" y="${PAD.t}" width="${pw}" height="${ph}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+
+  svg.innerHTML = out;
+}
+
+function speedBreakIt() {
+  if (speedBreakAnim) { clearInterval(speedBreakAnim); speedBreakAnim = null; }
+  const slider = document.getElementById('speed-compute');
+  slider.value = 100;
+  speedUpdate();
+  speedBreakAnim = setInterval(() => {
+    const cur = parseInt(slider.value);
+    if (cur >= 2500) { clearInterval(speedBreakAnim); speedBreakAnim = null; return; }
+    slider.value = Math.min(2500, cur + 40);
+    document.getElementById('speed-gpu').value = 'custom';
+    speedUpdate();
+  }, 50);
+}
+
+function speedToggleBatchHelper() {
+  speedBatchHelper = !speedBatchHelper;
+  document.getElementById('speed-t-btn').style.borderColor = speedBatchHelper ? 'var(--green)' : '';
+  document.getElementById('speed-t-btn').style.color = speedBatchHelper ? 'var(--green)' : '';
+  if (speedBatchHelper) {
+    // Ramp batch size to show AI climbing toward ridge
+    const slider = document.getElementById('speed-b');
+    let v = 1;
+    const anim = setInterval(() => {
+      v = Math.min(512, v + Math.ceil(v*0.2+1));
+      slider.value = v;
+      speedUpdate();
+      if (v >= 512) clearInterval(anim);
+    }, 80);
+  } else {
+    document.getElementById('speed-b').value = 1;
+    speedUpdate();
+  }
+}
+
+function speedReset() {
+  if (speedBreakAnim) { clearInterval(speedBreakAnim); speedBreakAnim = null; }
+  speedBatchHelper = false;
+  document.getElementById('speed-t-btn').style.borderColor = '';
+  document.getElementById('speed-t-btn').style.color = '';
+  document.getElementById('speed-gpu').value = 'h100';
+  document.getElementById('speed-compute').value = 990;
+  document.getElementById('speed-bw').value = 335;
+  document.getElementById('speed-model').value = 'l3_70b';
+  document.getElementById('speed-b').value = 1;
+  document.getElementById('speed-ctx').value = 30;
+  speedUpdate();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW 3 — BATCHING
+// ═══════════════════════════════════════════════════════════════
+const TICK_MS = 100;    // one sim tick = 100ms real decode step
+const SIM_TOK_PER_S = 10; // simulated tokens per second per slot
+
+let batchPRNG = mulberry32(42);
+let simRunning = true;
+let simLastTime = null;
+let simAccum = 0;
+let simTick = 0;
+let simSpeedMult = 1;
+let batchG = 8;
+
+// Request stream: same seeded sequence for both modes
+let reqStream = [];
+let reqStreamIdx_static = 0;
+let reqStreamIdx_cont   = 0;
+
+const REQ_COLORS = [
+  '#A78BFA','#2DD4E8','#FF8C42','#3DDC84','#F4707E',
+  '#60A5FA','#FBBF24','#34D399','#F87171','#C084FC'
+];
+
+function genReqStream(prng, count) {
+  const reqs = [];
+  for (let i = 0; i < count; i++) {
+    const r = prng();
+    const isShort = prng() < 0.6;
+    const outputLen = isShort
+      ? Math.floor(5 + prng() * 20)
+      : Math.floor(80 + prng() * 220);
+    const promptLen = Math.floor(32 + prng() * 200);
+    reqs.push({ id: i, outputLen, promptLen, color: REQ_COLORS[i % REQ_COLORS.length] });
+  }
+  return reqs;
+}
+
+// Static batching state
+let sStatic = null;
+// Continuous batching state
+let sCont   = null;
+
+function initBatchState() {
+  batchG = parseInt(document.getElementById('batch-g').value);
+  batchPRNG = mulberry32(getSeed());
+  reqStream = genReqStream(batchPRNG, 2000);
+  reqStreamIdx_static = 0;
+  reqStreamIdx_cont   = 0;
+  simTick = 0;
+  simAccum = 0;
+
+  sStatic = {
+    slots: Array(batchG).fill(null),
+    queue: [],
+    phase: 'idle', // 'running' | 'idle'
+    batchEndTick: 0,
+    totalTokens: 0,
+    completedReqs: 0,
+    utilTicks: 0,
+    totalTicks: 0,
+    waitTimes: [],
+    waitSum: 0,
+    arrivalTick: 0,
+  };
+
+  sCont = {
+    slots: Array(batchG).fill(null),
+    queue: [],
+    totalTokens: 0,
+    completedReqs: 0,
+    utilTicks: 0,
+    totalTicks: 0,
+    waitSum: 0,
+    waitTimes: [],
+  };
+
+  buildSlotDOM('static-slots', batchG);
+  buildSlotDOM('cont-slots', batchG);
+  renderBatch();
+}
+
+function buildSlotDOM(containerId, G) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 0; i < G; i++) {
+    const row = document.createElement('div');
+    row.className = 'batch-slot idle';
+    row.id = containerId + '-' + i;
+    row.innerHTML = `<div class="batch-slot-fill" id="${containerId}-fill-${i}"></div><div class="batch-slot-label" id="${containerId}-lbl-${i}">—</div>`;
+    el.appendChild(row);
+  }
+}
+
+let batchArrivalTick_static = 0;
+let batchArrivalTick_cont   = 0;
+
+function batchStep() {
+  simTick++;
+  const rate = parseFloat(document.getElementById('batch-rate').value) / 2;
+  // arrivals: Poisson-ish, both use same stream via reqStreamIdx
+  const ticksPerReq = 1 / rate * 10; // ticks between arrivals
+
+  // Static arrivals
+  if (simTick - batchArrivalTick_static >= ticksPerReq) {
+    if (reqStreamIdx_static < reqStream.length) {
+      const req = Object.assign({}, reqStream[reqStreamIdx_static++]);
+      req.arrivalTick = simTick;
+      sStatic.queue.push(req);
+    }
+    batchArrivalTick_static = simTick;
+  }
+
+  // Continuous arrivals (same cadence, same reqs)
+  if (simTick - batchArrivalTick_cont >= ticksPerReq) {
+    if (reqStreamIdx_cont < reqStream.length) {
+      const req = Object.assign({}, reqStream[reqStreamIdx_cont++]);
+      req.arrivalTick = simTick;
+      sCont.queue.push(req);
+    }
+    batchArrivalTick_cont = simTick;
+  }
+
+  tickStatic();
+  tickCont();
+}
+
+function tickStatic() {
+  const s = sStatic;
+  s.totalTicks++;
+  const G = batchG;
+
+  if (s.phase === 'idle') {
+    // Admit next batch
+    const batch = [];
+    while (batch.length < G && s.queue.length > 0) {
+      const req = s.queue.shift();
+      s.waitSum += simTick - req.arrivalTick;
+      batch.push(req);
+    }
+    if (batch.length > 0) {
+      const maxOut = Math.max(...batch.map(r => r.outputLen));
+      s.batchEndTick = simTick + maxOut;
+      for (let i = 0; i < G; i++) {
+        s.slots[i] = i < batch.length
+          ? { req: batch[i], tokensLeft: batch[i].outputLen, totalTokens: batch[i].outputLen }
+          : null;
+      }
+      s.phase = 'running';
+    }
+  }
+
+  if (s.phase === 'running') {
+    let activeCount = 0;
+    for (let i = 0; i < G; i++) {
+      if (s.slots[i] && s.slots[i].tokensLeft > 0) {
+        s.slots[i].tokensLeft--;
+        s.totalTokens++;
+        activeCount++;
+        if (s.slots[i].tokensLeft === 0) {
+          s.completedReqs++;   // count exactly once, when it transitions to 0
+        }
+      }
+    }
+    if (simTick >= s.batchEndTick) {
+      for (let i = 0; i < G; i++) s.slots[i] = null;
+      s.phase = 'idle';
+    }
+    s.utilTicks += activeCount / G;
+  }
+}
+
+function tickCont() {
+  const s = sCont;
+  const G = batchG;
+  s.totalTicks++;
+
+  // Admit as many as possible to fill slots
+  for (let i = 0; i < G; i++) {
+    if (!s.slots[i] && s.queue.length > 0) {
+      const req = s.queue.shift();
+      s.waitSum += simTick - req.arrivalTick;
+      s.slots[i] = { req, tokensLeft: req.outputLen, totalTokens: req.outputLen };
+    }
+  }
+
+  let activeCount = 0;
+  for (let i = 0; i < G; i++) {
+    if (s.slots[i]) {
+      s.slots[i].tokensLeft--;
+      s.totalTokens++;
+      activeCount++;
+      if (s.slots[i].tokensLeft <= 0) {
+        s.completedReqs++;
+        s.slots[i] = null;
+      }
+    }
+  }
+  s.utilTicks += activeCount / G;
+}
+
+function renderBatch() {
+  const G = batchG;
+
+  // Render static slots
+  for (let i = 0; i < G; i++) {
+    const slot = sStatic.slots[i];
+    const fillEl = document.getElementById('static-slots-fill-' + i);
+    const lblEl  = document.getElementById('static-slots-lbl-' + i);
+    const rowEl  = document.getElementById('static-slots-' + i);
+    if (slot) {
+      const pct = (1 - slot.tokensLeft / slot.totalTokens) * 100;
+      const isFinished = slot.tokensLeft === 0;
+      fillEl.style.width = pct + '%';
+      fillEl.style.background = isFinished ? 'var(--border)' : slot.req.color;
+      rowEl.classList.toggle('idle', isFinished);
+      lblEl.textContent = isFinished ? 'idle' : `r${slot.req.id} (${slot.tokensLeft}t)`;
+      lblEl.style.color = isFinished ? 'var(--muted)' : 'rgba(255,255,255,0.9)';
+    } else {
+      fillEl.style.width = '0%';
+      rowEl.classList.add('idle');
+      lblEl.textContent = '—';
+    }
+  }
+
+  // Render cont slots
+  for (let i = 0; i < G; i++) {
+    const slot = sCont.slots[i];
+    const fillEl = document.getElementById('cont-slots-fill-' + i);
+    const lblEl  = document.getElementById('cont-slots-lbl-' + i);
+    const rowEl  = document.getElementById('cont-slots-' + i);
+    if (slot) {
+      const pct = (1 - slot.tokensLeft / slot.totalTokens) * 100;
+      fillEl.style.width = pct + '%';
+      fillEl.style.background = slot.req.color;
+      rowEl.classList.remove('idle');
+      lblEl.textContent = `r${slot.req.id} (${slot.tokensLeft}t)`;
+      lblEl.style.color = 'rgba(255,255,255,0.9)';
+    } else {
+      fillEl.style.width = '0%';
+      rowEl.classList.add('idle');
+      lblEl.textContent = '—';
+    }
+  }
+
+  // Render queues
+  const staticQ = document.getElementById('static-queue');
+  staticQ.innerHTML = '';
+  sStatic.queue.slice(0, 40).forEach(r => {
+    const chip = document.createElement('div');
+    chip.className = 'queue-chip';
+    chip.style.background = r.color;
+    staticQ.appendChild(chip);
+  });
+
+  const contQ = document.getElementById('cont-queue');
+  contQ.innerHTML = '';
+  sCont.queue.slice(0, 40).forEach(r => {
+    const chip = document.createElement('div');
+    chip.className = 'queue-chip';
+    chip.style.background = r.color;
+    contQ.appendChild(chip);
+  });
+
+  // Metrics
+  const tSec = simTick * TICK_MS / 1000;
+  const staticUtil = sStatic.totalTicks > 0 ? (sStatic.utilTicks / sStatic.totalTicks * 100).toFixed(1) : '0.0';
+  const contUtil   = sCont.totalTicks   > 0 ? (sCont.utilTicks   / sCont.totalTicks   * 100).toFixed(1) : '0.0';
+  const staticTput = tSec > 0 ? (sStatic.totalTokens / tSec).toFixed(0) : '0';
+  const contTput   = tSec > 0 ? (sCont.totalTokens   / tSec).toFixed(0) : '0';
+  const staticWait = sStatic.completedReqs > 0 ? ((sStatic.waitSum / sStatic.completedReqs) * TICK_MS / 1000).toFixed(1) : '0.0';
+  const contWait   = sCont.completedReqs   > 0 ? ((sCont.waitSum   / sCont.completedReqs)   * TICK_MS / 1000).toFixed(1) : '0.0';
+
+  document.getElementById('static-util').textContent = staticUtil + '%';
+  document.getElementById('cont-util').textContent   = contUtil + '%';
+  document.getElementById('static-tput').textContent = staticTput + ' t/s';
+  document.getElementById('cont-tput').textContent   = contTput + ' t/s';
+  document.getElementById('static-done').textContent = sStatic.completedReqs;
+  document.getElementById('cont-done').textContent   = sCont.completedReqs;
+  document.getElementById('static-wait').textContent = staticWait + 's';
+  document.getElementById('cont-wait').textContent   = contWait + 's';
+
+  document.getElementById('batch-tick').textContent  = simTick;
+  document.getElementById('batch-clock').textContent = (simTick * TICK_MS / 1000).toFixed(2) + 's';
+}
+
+function simToggle() {
+  simRunning = !simRunning;
+  document.getElementById('sim-play-btn').textContent = simRunning ? 'Space — Pause' : 'Space — Play';
+}
+
+function simStep() {
+  batchStep();
+  renderBatch();
+}
+
+function batchUpdate() {
+  const g = parseInt(document.getElementById('batch-g').value);
+  document.getElementById('batch-g-val').textContent = g;
+  const rate = parseInt(document.getElementById('batch-rate').value);
+  document.getElementById('batch-rate-val').textContent = (rate / 2).toFixed(1);
+  const spd = parseInt(document.getElementById('batch-speed').value);
+  simSpeedMult = spd;
+  document.getElementById('batch-speed-val').textContent = spd + '×';
+}
+
+function batchBreakIt() {
+  // Inject one very long request to the static queue head
+  const longReq = { id: 9999, outputLen: 500, promptLen: 100, color: '#F4707E', arrivalTick: simTick };
+  sStatic.queue.unshift(longReq);
+}
+
+function batchReset() {
+  batchUpdate();
+  simTick = 0;
+  batchArrivalTick_static = 0;
+  batchArrivalTick_cont   = 0;
+  simRunning = true;
+  document.getElementById('sim-play-btn').textContent = 'Space — Pause';
+  initBatchState();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW 4 — FLEET
+// ═══════════════════════════════════════════════════════════════
+const FLEET_TICK_MS = 50;
+const PREFIX_IDS = ['sys-A','sys-B','sys-C','sys-D','unique'];
+const PREFIX_PROBS = [0.35, 0.25, 0.15, 0.10, 0.15]; // Zipf-ish
+const WEIGHTS_GB = 35; // Llama 70B INT4 for fleet demo
+const POD_VRAM_GB = 80;
+const PREFIX_SIZE_GB = 0.5;
+const PER_TOK_GB = 0.000128;
+
+let fleetPRNG;
+let fleetRunning = true;
+let fleetTick = 0;
+let fleetAccum = 0;
+let fleetLastTime = null;
+let fleetSpeedMult = 1;
+let fleetRouter = 'rr';
+let fleetPods = [];
+let fleetReqStream = [];
+let fleetReqIdx = 0;
+let fleetArrivalTick = 0;
+let fleetHits = 0, fleetMisses = 0, fleetDrops = 0, fleetTotalDone = 0;
+let fleetTTFTs = [];
+let fleetSparkData = [];
+let podFlashData = [];   // [{type, until}] per pod, tick-based flash state
+const SPARK_MAX = 60;
+
+function fleetInit() {
+  fleetPRNG = mulberry32(getSeed());
+  fleetReqStream = genFleetStream(fleetPRNG, 5000);
+  fleetReqIdx = 0;
+  fleetArrivalTick = 0;
+  fleetTick = 0;
+  fleetAccum = 0;
+  fleetHits = 0; fleetMisses = 0; fleetDrops = 0; fleetTotalDone = 0;
+  fleetTTFTs = [];
+  fleetSparkData = [];
+  fleetRunning = true;
+  document.getElementById('fleet-play-btn').textContent = 'Space — Pause';
+
+  const N = parseInt(document.getElementById('fleet-n').value);
+  fleetPods = [];
+  podFlashData = [];
+  for (let i = 0; i < N; i++) {
+    fleetPods.push({
+      id: i,
+      cachedPrefixes: new Map(),
+      activeSeqs: [],   // [{ticksLeft}] — tick-based, respects pause & speed
+      totalDone: 0,
+    });
+    podFlashData.push(null);
+  }
+  buildPodCards();
+}
+
+function genFleetStream(prng, count) {
+  const reqs = [];
+  for (let i = 0; i < count; i++) {
+    const r = prng();
+    // pick prefix by cumulative prob
+    let cumP = 0, prefixId = 'unique';
+    const roll = prng();
+    for (let j = 0; j < PREFIX_IDS.length; j++) {
+      cumP += PREFIX_PROBS[j];
+      if (roll < cumP) { prefixId = PREFIX_IDS[j]; break; }
+    }
+    const isUnique = prefixId === 'unique';
+    const actualPrefixId = isUnique ? 'u' + i : prefixId;
+    const outputLen = prng() < 0.6 ? Math.floor(5 + prng() * 30) : Math.floor(60 + prng() * 200);
+    const promptLen = Math.floor(100 + prng() * 500);
+    reqs.push({ id: i, prefixId: actualPrefixId, outputLen, promptLen, isUnique });
+  }
+  return reqs;
+}
+
+function buildPodCards() {
+  const grid = document.getElementById('fleet-grid');
+  grid.innerHTML = '';
+  fleetPods.forEach(pod => {
+    const card = document.createElement('div');
+    card.className = 'pod-card';
+    card.id = 'pod-card-' + pod.id;
+    card.innerHTML = `
+      <div class="pod-name">Pod ${pod.id}</div>
+      <div class="pod-mem-bar-bg"><div class="pod-mem-bar-fill" id="pod-mem-${pod.id}" style="width:0%;background:var(--green)"></div></div>
+      <div class="pod-stats">
+        Active: <span id="pod-active-${pod.id}">0</span> &nbsp;
+        Done: <span id="pod-done-${pod.id}">0</span>
+      </div>
+      <div class="pod-prefix-list" id="pod-prefixes-${pod.id}">no cache</div>
+      <div class="pod-flash" id="pod-flash-${pod.id}"></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function fleetRoute(req) {
+  const N = fleetPods.length;
+  const cap = parseInt(document.getElementById('fleet-cap').value);
+  if (fleetRouter === 'rr') {
+    return fleetTick % N;
+  } else if (fleetRouter === 'll') {
+    let best = 0, bestLoad = Infinity;
+    for (let i = 0; i < N; i++) {
+      const load = fleetPods[i].activeSeqs.length;
+      if (load < bestLoad) { best = i; bestLoad = load; }
+    }
+    return best;
+  } else {
+    // cache-aware: score = big bonus if prefix cached + free memory - active load penalty
+    let best = -1, bestScore = -Infinity;
+    for (let i = 0; i < N; i++) {
+      const pod = fleetPods[i];
+      const load = pod.activeSeqs.length;
+      const freeMem = POD_VRAM_GB - WEIGHTS_GB - load * PER_TOK_GB * 1000 - pod.cachedPrefixes.size * PREFIX_SIZE_GB;
+      const cacheHit = pod.cachedPrefixes.has(req.prefixId) ? 100 : 0;
+      const score = cacheHit + freeMem * 2 - load * 10;
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return best < 0 ? fleetTick % N : best;
+  }
+}
+
+function fleetStep() {
+  fleetTick++;
+  const cap = parseInt(document.getElementById('fleet-cap').value);
+  const qps = parseInt(document.getElementById('fleet-qps').value);
+  const ticksPerReq = 10 / qps;
+
+  // Advance all active decode sequences; complete finished ones
+  for (const pod of fleetPods) {
+    const alive = [];
+    for (const seq of pod.activeSeqs) {
+      seq.ticksLeft--;
+      if (seq.ticksLeft <= 0) {
+        pod.totalDone++;
+        fleetTotalDone++;
+      } else {
+        alive.push(seq);
+      }
+    }
+    pod.activeSeqs = alive;
+  }
+
+  // Arrivals — same tick cadence regardless of router
+  if (fleetTick - fleetArrivalTick >= ticksPerReq && fleetReqIdx < fleetReqStream.length) {
+    const req = fleetReqStream[fleetReqIdx++];
+    const podIdx = fleetRoute(req);
+    const pod = fleetPods[podIdx];
+
+    if (pod.activeSeqs.length >= cap) {
+      fleetDrops++;
+    } else {
+      const isHit = !req.isUnique && pod.cachedPrefixes.has(req.prefixId);
+      // Deterministic jitter from req.id (no Math.random — keeps runs identical)
+      const jitter = (req.id * 2654435761 >>> 0) % 100;
+      if (isHit) {
+        fleetHits++;
+        fleetTTFTs.push(50 + (jitter % 30));
+        podFlashData[podIdx] = { type: 'hit', until: fleetTick + 6 };
+      } else {
+        fleetMisses++;
+        fleetTTFTs.push(Math.round(200 + req.promptLen * 0.5 + jitter));
+        podFlashData[podIdx] = { type: 'miss', until: fleetTick + 6 };
+        if (!req.isUnique) {
+          while (pod.cachedPrefixes.size >= 1) {
+            pod.cachedPrefixes.delete(pod.cachedPrefixes.keys().next().value);
+          }
+          pod.cachedPrefixes.set(req.prefixId, PREFIX_SIZE_GB);
+        }
+      }
+      pod.activeSeqs.push({ ticksLeft: req.outputLen });
+    }
+    fleetArrivalTick = fleetTick;
+
+    // Sparkline: push p95 of recent window
+    const recent = fleetTTFTs.slice(-20);
+    const p95 = recent.slice().sort((a,b)=>a-b)[Math.floor(recent.length * 0.95)] || 0;
+    fleetSparkData.push(p95);
+    if (fleetSparkData.length > SPARK_MAX) fleetSparkData.shift();
+  }
+
+  renderFleet();
+}
+
+function renderFleet() {
+  fleetPods.forEach(pod => {
+    const load = pod.activeSeqs.length;
+    const usedGB = WEIGHTS_GB + load * PER_TOK_GB * 1000 + pod.cachedPrefixes.size * PREFIX_SIZE_GB;
+    const pct = Math.min(100, usedGB / POD_VRAM_GB * 100);
+    const fill = document.getElementById('pod-mem-' + pod.id);
+    if (fill) {
+      fill.style.width = pct + '%';
+      fill.style.background = pct > 85 ? 'var(--red)' : pct > 65 ? 'var(--compute)' : 'var(--green)';
+    }
+    const activeEl = document.getElementById('pod-active-' + pod.id);
+    if (activeEl) activeEl.textContent = load;
+    const doneEl = document.getElementById('pod-done-' + pod.id);
+    if (doneEl) doneEl.textContent = pod.totalDone;
+    const prefEl = document.getElementById('pod-prefixes-' + pod.id);
+    if (prefEl) {
+      const keys = [...pod.cachedPrefixes.keys()];
+      prefEl.textContent = keys.length ? keys.join(', ') : 'no cache';
+    }
+    // Tick-based flash (respects pause)
+    const flash = podFlashData[pod.id];
+    const flashEl = document.getElementById('pod-flash-' + pod.id);
+    if (flashEl) {
+      if (flash && fleetTick < flash.until) {
+        flashEl.className = 'pod-flash ' + flash.type;
+        flashEl.style.opacity = '0.8';
+      } else {
+        flashEl.style.opacity = '0';
+      }
+    }
+  });
+
+  const total = fleetHits + fleetMisses;
+  const hitPct = total > 0 ? (fleetHits / total * 100).toFixed(1) : '0.0';
+  document.getElementById('fleet-r-hit').textContent = hitPct + '%';
+  document.getElementById('fleet-r-drops').textContent = fleetDrops;
+
+  const recent = fleetTTFTs.slice(-100);
+  if (recent.length > 0) {
+    const sorted = recent.slice().sort((a,b)=>a-b);
+    const p50 = sorted[Math.floor(sorted.length * 0.5)] || 0;
+    const p95 = sorted[Math.floor(sorted.length * 0.95)] || 0;
+    document.getElementById('fleet-r-p50').textContent = p50 + 'ms';
+    document.getElementById('fleet-r-p95').textContent = p95 + 'ms';
+  }
+
+  const elapsed = fleetTick * FLEET_TICK_MS / 1000;
+  document.getElementById('fleet-r-tput').textContent = elapsed > 0 ? (fleetTotalDone / elapsed).toFixed(1) + ' req/s' : '—';
+
+  drawSparkline();
+}
+
+function drawSparkline() {
+  const svg = document.getElementById('sparkline-svg');
+  if (!fleetSparkData.length) { svg.innerHTML = ''; return; }
+  const W = 280, H = 60;
+  const max = Math.max(...fleetSparkData, 1);
+  const pts = fleetSparkData.map((v, i) => {
+    const x = (i / (SPARK_MAX - 1)) * W;
+    const y = H - (v / max) * (H - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="var(--red)" stroke-width="2"/>`;
+}
+
+function fleetSetRouter(r) {
+  fleetRouter = r;
+  document.querySelectorAll('#fleet-router-ctrl .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.r === r));
+}
+
+function fleetUpdate() {
+  const qps = parseInt(document.getElementById('fleet-qps').value);
+  document.getElementById('fleet-qps-val').textContent = qps;
+  const cap = parseInt(document.getElementById('fleet-cap').value);
+  document.getElementById('fleet-cap-val').textContent = cap;
+  const spd = parseInt(document.getElementById('fleet-speed').value);
+  fleetSpeedMult = spd;
+  document.getElementById('fleet-speed-val').textContent = spd + '×';
+}
+
+function fleetRebuild() {
+  fleetUpdate();
+  const N = parseInt(document.getElementById('fleet-n').value);
+  document.getElementById('fleet-n-val').textContent = N;
+  fleetInit();
+}
+
+function fleetToggle() {
+  fleetRunning = !fleetRunning;
+  document.getElementById('fleet-play-btn').textContent = fleetRunning ? 'Space — Pause' : 'Space — Play';
+}
+
+function fleetBreakIt() {
+  document.getElementById('fleet-qps').value = 30;
+  fleetUpdate();
+}
+
+function fleetReset() {
+  document.getElementById('fleet-qps').value = 4;
+  document.getElementById('fleet-n').value = 6;
+  document.getElementById('fleet-cap').value = 8;
+  document.getElementById('fleet-speed').value = 1;
+  fleetUpdate();
+  fleetSetRouter('rr');
+  fleetInit();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN RAF LOOP
+// ═══════════════════════════════════════════════════════════════
+function mainLoop(ts) {
+  requestAnimationFrame(mainLoop);
+
+  // Batching sim
+  if (currentView === 'batching' && simRunning) {
+    if (simLastTime === null) simLastTime = ts;
+    simAccum += (ts - simLastTime) * simSpeedMult;
+    simLastTime = ts;
+    while (simAccum >= TICK_MS) {
+      batchStep();
+      simAccum -= TICK_MS;
+    }
+    renderBatch();
+  } else {
+    simLastTime = null;
+  }
+
+  // Fleet sim
+  if (currentView === 'fleet' && fleetRunning) {
+    if (fleetLastTime === null) fleetLastTime = ts;
+    fleetAccum += (ts - fleetLastTime) * fleetSpeedMult;
+    fleetLastTime = ts;
+    while (fleetAccum >= FLEET_TICK_MS) {
+      fleetStep();
+      fleetAccum -= FLEET_TICK_MS;
+    }
+  } else {
+    fleetLastTime = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD HANDLER
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Ignore if focus is on an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+  switch (e.key) {
+    case '1': switchView('fit');      break;
+    case '2': switchView('speed');    break;
+    case '3': switchView('batching'); break;
+    case '4': switchView('fleet');    break;
+    case ' ':
+      e.preventDefault();
+      if (currentView === 'batching') simToggle();
+      if (currentView === 'fleet')    fleetToggle();
+      break;
+    case 'r': case 'R':
+      if (currentView === 'fit')      fitReset();
+      if (currentView === 'speed')    speedReset();
+      if (currentView === 'batching') batchReset();
+      if (currentView === 'fleet')    fleetReset();
+      break;
+    case 'b': case 'B':
+      if (currentView === 'fit')      fitBreakIt();
+      if (currentView === 'speed')    speedBreakIt();
+      if (currentView === 'batching') batchBreakIt();
+      if (currentView === 'fleet')    fleetBreakIt();
+      break;
+    case 't': case 'T':
+      if (currentView === 'fit') {
+        const quants = ['fp16','int8','int4'];
+        const next = quants[(quants.indexOf(fitQuant) + 1) % 3];
+        fitSetQuant(next);
+      }
+      if (currentView === 'speed') speedToggleBatchHelper();
+      if (currentView === 'fleet') {
+        const routers = ['rr','ll','ca'];
+        const next = routers[(routers.indexOf(fleetRouter) + 1) % 3];
+        fleetSetRouter(next);
+      }
+      break;
+    case 'ArrowRight':
+      if (currentView === 'fit') {
+        const s = document.getElementById('fit-b');
+        s.value = Math.min(256, parseInt(s.value) + 4); fitUpdate();
+      }
+      if (currentView === 'speed') {
+        const s = document.getElementById('speed-bw');
+        s.value = Math.min(90, parseInt(s.value) + 2); speedUpdate();
+      }
+      if (currentView === 'batching') {
+        const s = document.getElementById('batch-rate');
+        s.value = Math.min(20, parseInt(s.value) + 1); batchUpdate();
+      }
+      if (currentView === 'fleet') {
+        const s = document.getElementById('fleet-qps');
+        s.value = Math.min(30, parseInt(s.value) + 1); fleetUpdate();
+      }
+      break;
+    case 'ArrowLeft':
+      if (currentView === 'fit') {
+        const s = document.getElementById('fit-b');
+        s.value = Math.max(1, parseInt(s.value) - 4); fitUpdate();
+      }
+      if (currentView === 'speed') {
+        const s = document.getElementById('speed-bw');
+        s.value = Math.max(10, parseInt(s.value) - 2); speedUpdate();
+      }
+      if (currentView === 'batching') {
+        const s = document.getElementById('batch-rate');
+        s.value = Math.max(1, parseInt(s.value) - 1); batchUpdate();
+      }
+      if (currentView === 'fleet') {
+        const s = document.getElementById('fleet-qps');
+        s.value = Math.max(1, parseInt(s.value) - 1); fleetUpdate();
+      }
+      break;
+    case '+': case '=':
+      if (currentView === 'batching') {
+        const s = document.getElementById('batch-speed');
+        s.value = Math.min(8, parseInt(s.value) + 1); batchUpdate();
+      }
+      if (currentView === 'fleet') {
+        const s = document.getElementById('fleet-speed');
+        s.value = Math.min(8, parseInt(s.value) + 1); fleetUpdate();
+      }
+      break;
+    case '-':
+      if (currentView === 'batching') {
+        const s = document.getElementById('batch-speed');
+        s.value = Math.max(1, parseInt(s.value) - 1); batchUpdate();
+      }
+      if (currentView === 'fleet') {
+        const s = document.getElementById('fleet-speed');
+        s.value = Math.max(1, parseInt(s.value) - 1); fleetUpdate();
+      }
+      break;
+    case '?':
+      toggleHelp();
+      break;
+  }
+});
+
+// Close help on overlay click
+document.getElementById('help-overlay').addEventListener('click', function(e) {
+  if (e.target === this) toggleHelp();
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════════
+fitReset();
+speedReset();
+initBatchState();
+fleetInit();
+batchUpdate();
+fleetUpdate();
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>
