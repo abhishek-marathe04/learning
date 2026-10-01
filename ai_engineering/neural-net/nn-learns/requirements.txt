@@ -1,0 +1,6 @@
+streamlit>=1.40
+torch
+plotly
+numpy
+pandas
+pytest

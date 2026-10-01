@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a network learns — live demo</title>
+<style>
+:root{
+  --bg:#151A33; --panel:#1D2344; --panel2:#242B52; --line:#343C6B;
+  --ink:#ECEEF8; --muted:#9AA2C8;
+  --loss:#F2A541; --knob:#3CC6B0; --bad:#EF6F6C;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+body{display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:24px;padding:12px 24px;border-bottom:1px solid var(--line)}
+header h1{font-family:Georgia,"Times New Roman",serif;font-weight:normal;font-size:22px;margin:0;white-space:nowrap}
+nav{display:flex;gap:6px}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:8px;
+  padding:7px 14px;font-size:15px;cursor:pointer}
+nav button .k{opacity:.6;margin-right:6px}
+nav button.on{color:var(--ink);background:var(--panel2);border-color:var(--line)}
+.keys{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap}
+kbd{font-family:inherit;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12px;color:var(--ink);background:var(--panel)}
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;display:none;padding:16px 24px 14px;gap:16px}
+.view.on{display:grid}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;position:relative;min-height:0;min-width:0;display:flex;flex-direction:column}
+.card h2{font-size:14px;font-weight:600;margin:12px 16px 0;color:var(--muted)}
+.card canvas{flex:1;width:100%;min-height:0;display:block}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--knob);color:#0E2A27;border-color:var(--knob);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;padding:8px 12px;font-size:14px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--panel2);color:var(--ink)}
+.stat{display:flex;flex-direction:column;min-width:86px}
+.stat b{font-size:22px;font-variant-numeric:tabular-nums;font-weight:600}
+.stat span{font-size:12px;color:var(--muted)}
+.stat.loss b{color:var(--loss)} .stat.knob b{color:var(--knob)}
+.status{color:var(--muted);font-size:15px;min-height:20px}
+.status.good{color:var(--knob)} .status.bad{color:var(--bad)}
+input[type=range]{accent-color:var(--knob);width:180px}
+label.sl{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--loss);outline-offset:2px}
+.lbl{font-size:12px;color:var(--muted)}
+
+/* view 1 */
+#v1{grid-template-columns:1fr 1fr;grid-template-rows:1fr auto}
+#v1 .controls{grid-column:1/3}
+/* view 2 */
+#v2{grid-template-columns:1fr 320px;grid-template-rows:1fr auto}
+#v2 .side{display:flex;flex-direction:column;gap:16px;min-height:0}
+#v2 .controls{grid-column:1/3}
+/* view 3 */
+#v3{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:1fr auto}
+#v3 .right{display:grid;grid-template-rows:auto 1fr;gap:16px;min-height:0}
+#v3 .controls{grid-column:1/3}
+.samples{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;padding:10px 16px 14px;font-size:19px;font-family:Georgia,"Times New Roman",serif}
+.samples div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.probe{padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.probe input{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:17px;width:220px}
+.probe .rows{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap}
+.pc{display:flex;flex-direction:column;align-items:center;width:40px;font-size:12px;color:var(--muted)}
+.pc .bx{width:26px;height:70px;background:var(--bg);border-radius:4px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.pc .bx i{position:absolute;left:0;right:0;bottom:0;background:var(--loss)}
+.pc .ch{font-size:17px;color:var(--ink);font-family:Georgia,serif;margin-top:3px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>How a network learns</h1>
+  <nav id="tabs">
+    <button data-v="1" class="on"><span class="k">1</span>Knobs</button>
+    <button data-v="2"><span class="k">2</span>Bends</button>
+    <button data-v="3"><span class="k">3</span>Next letter</button>
+  </nav>
+  <div class="keys" id="keys"></div>
+</header>
+<main>
+
+<!-- VIEW 1 : one neuron learns Celsius -> Fahrenheit -->
+<section class="view on" id="v1">
+  <div class="card"><h2>Thermometer readings, and the model's current guess</h2><canvas id="k-data"></canvas></div>
+  <div class="card"><h2>Every possible setting of the two knobs, coloured by loss (click to jump)</h2><canvas id="k-land"></canvas></div>
+  <div class="controls bar">
+    <label class="sl">w <input type="range" id="k-w" min="0" max="3" step="0.01"></label>
+    <label class="sl">b <input type="range" id="k-b" min="-40" max="80" step="0.5"></label>
+    <div class="stat knob"><b id="k-wv">0</b><span>w, multiplier</span></div>
+    <div class="stat knob"><b id="k-bv">0</b><span>b, offset</span></div>
+    <div class="stat loss"><b id="k-lv">0</b><span>loss</span></div>
+    <div class="stat"><b id="k-sv">0</b><span>nudges</span></div>
+    <span class="lbl">Step size</span>
+    <div class="seg" id="k-lr"></div>
+    <button class="btn" id="k-step">Nudge once</button>
+    <button class="btn primary" id="k-run">Train</button>
+    <button class="btn" id="k-reset">Reset</button>
+    <div class="status" id="k-status"></div>
+  </div>
+</section>
+
+<!-- VIEW 2 : hidden ReLU units build a curve -->
+<section class="view" id="v2">
+  <div class="card"><h2 id="b-title">Fitting a curve with hinges</h2><canvas id="b-plot"></canvas></div>
+  <div class="side">
+    <div class="card" style="flex:1"><h2>Loss over time</h2><canvas id="b-loss"></canvas></div>
+  </div>
+  <div class="controls bar">
+    <span class="lbl">Data</span><div class="seg" id="b-ds"></div>
+    <span class="lbl">Hidden neurons</span><div class="seg" id="b-h"></div>
+    <button class="btn" id="b-pieces">Hide pieces</button>
+    <div class="stat loss"><b id="b-lv">0</b><span>loss</span></div>
+    <div class="stat"><b id="b-sv">0</b><span>nudges</span></div>
+    <div class="stat knob"><b id="b-kv">0</b><span>knobs</span></div>
+    <button class="btn primary" id="b-run">Train</button>
+    <button class="btn" id="b-reset">Reset</button>
+  </div>
+</section>
+
+<!-- VIEW 3 : bigram next-character model -->
+<section class="view" id="v3">
+  <div class="card"><h2>What the model thinks comes next (row = current letter, column = next letter)</h2><canvas id="n-heat"></canvas></div>
+  <div class="right">
+    <div class="card"><h2>Names it invents right now</h2><div class="samples" id="n-samples"></div></div>
+    <div class="card">
+      <h2>How surprised is it by this name?</h2>
+      <div class="probe">
+        <input id="n-probe" value="aarav" autocomplete="off" spellcheck="false" aria-label="Name to test">
+        <div class="rows" id="n-bars"></div>
+        <div class="status" id="n-surp"></div>
+      </div>
+      <canvas id="n-loss" style="flex:1;min-height:120px"></canvas>
+    </div>
+  </div>
+  <div class="controls bar">
+    <div class="stat loss"><b id="n-lv">0</b><span>loss (avg surprise)</span></div>
+    <div class="stat"><b id="n-sv">0</b><span>nudges</span></div>
+    <div class="stat knob"><b>729</b><span>knobs (27 × 27)</span></div>
+    <div class="stat"><b id="n-dv">0</b><span>training pairs</span></div>
+    <button class="btn" id="n-step">Nudge once</button>
+    <button class="btn primary" id="n-run">Train</button>
+    <button class="btn" id="n-reset">Reset</button>
+    <div class="status" id="n-status"></div>
+  </div>
+</section>
+</main>
+
+<script>
+/* ---------- shared helpers ---------- */
+const C = {bg:'#151A33',panel:'#1D2344',line:'#343C6B',ink:'#ECEEF8',muted:'#9AA2C8',loss:'#F2A541',knob:'#3CC6B0',bad:'#EF6F6C'};
+const $ = id => document.getElementById(id);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0;while(!u)u=r();const v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function prep(c){const dpr=window.devicePixelRatio||1;const r=c.getBoundingClientRect();
+  const w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h}
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,r.width,r.height);return {ctx,W:r.width,H:r.height}}
+function fmt(v,d){return (Math.abs(v)>=1e5)?v.toExponential(1):v.toFixed(d)}
+function seg(el,items,get,set){el.innerHTML='';items.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{set(i);refresh()};el.appendChild(b)});
+  function refresh(){[...el.children].forEach((b,i)=>b.classList.toggle('on',i===get()))} refresh(); return refresh}
+function lossChart(ctx,x,y,w,h,hist,refs){
+  ctx.save();ctx.font='12px system-ui,sans-serif';
+  const vals=hist.length?hist:[1];let lo=Infinity,hi=-Infinity;
+  for(const v of vals){if(v>0){lo=Math.min(lo,v);hi=Math.max(hi,v)}}
+  for(const r of refs){lo=Math.min(lo,r.v);hi=Math.max(hi,r.v)}
+  if(!isFinite(lo)){lo=0.001;hi=1} lo=Math.log(lo*0.8);hi=Math.log(hi*1.25);
+  const Y=v=>y+h-(Math.log(Math.max(v,1e-9))-lo)/(hi-lo)*h;
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,w,h);
+  for(const r of refs){const yy=Y(r.v);ctx.strokeStyle=r.c;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=r.c;ctx.textAlign='right';ctx.fillText(r.t,x+w-6,yy-5)}
+  if(hist.length>1){ctx.strokeStyle=C.loss;ctx.lineWidth=2;ctx.beginPath();
+    const n=hist.length;for(let i=0;i<n;i++){const xx=x+i/(n-1)*w;const yy=Y(hist[i]);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke()}
+  ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText('log scale',x+6,y+14);ctx.restore()}
+
+/* ================= VIEW 1: KNOBS ================= */
+const K={data:[],w:0.5,b:0,W0:0.5,B0:0,running:false,step:0,trail:[],
+  lrs:[{n:'Tiny',v:0.00015},{n:'Good',v:0.0012},{n:'Too big',v:0.0025}],lr:1,
+  land:null,frame:0,status:'',cls:''};
+const WR=[0,3.2],BR=[-40,80];
+(function(){const r=mulberry32(7);for(let i=0;i<24;i++){const x=-10+50*i/23+(r()-0.5)*1.5;K.data.push({x,y:1.8*x+32+gauss(r)*1.6})}})();
+function kLoss(w,b){let s=0;for(const p of K.data){const e=w*p.x+b-p.y;s+=e*e}return s/K.data.length}
+function kGrad(w,b){let gw=0,gb=0;for(const p of K.data){const e=w*p.x+b-p.y;gw+=2*e*p.x;gb+=2*e}const n=K.data.length;return[gw/n,gb/n]}
+function kSet(w,b,keepTrail){K.w=w;K.b=b;if(!keepTrail){K.trail=[[w,b]];K.step=0}K.status='';K.cls=''}
+function kReset(){K.running=false;kSet(K.W0,K.B0);}
+function kStep(){const[gw,gb]=kGrad(K.w,K.b);const lr=K.lrs[K.lr].v;K.w-=lr*gw;K.b-=lr*gb;K.step++;
+  K.trail.push([K.w,K.b]);if(K.trail.length>30000)K.trail.shift();
+  const L=kLoss(K.w,K.b);
+  if(!isFinite(L)||L>1e6){K.running=false;K.status='Loss exploded: each step overshoots the valley and lands higher up the other side.';K.cls='bad';return}
+  if(Math.hypot(gw,gb)<0.01){K.running=false;K.status=`Settled after ${K.step} nudges: w ≈ ${K.w.toFixed(2)}, b ≈ ${K.b.toFixed(1)}. Nobody told it the formula.`;K.cls='good'}}
+function kTick(){if(!K.running)return;K.frame++;
+  if(K.lr===2){if(K.frame%4===0)kStep();return}
+  const spf=K.lr===0?40:Math.min(40,1+Math.floor(K.step/12));for(let i=0;i<spf&&K.running;i++)kStep()}
+function landColor(t){const s=[[15,59,69],[29,35,68],[90,62,87],[181,112,58],[242,165,65]];
+  t=Math.max(0,Math.min(1,t))*(s.length-1);const i=Math.min(s.length-2,Math.floor(t)),f=t-i;
+  return s[i].map((v,k)=>Math.round(v+(s[i+1][k]-v)*f))}
+function buildLand(){const gw=440,gh=300;const cv=document.createElement('canvas');cv.width=gw;cv.height=gh;const x=cv.getContext('2d');const img=x.createImageData(gw,gh);
+  const vals=[];let lo=Infinity,hi=-Infinity;
+  for(let j=0;j<gh;j++)for(let i=0;i<gw;i++){const w=WR[0]+(WR[1]-WR[0])*i/(gw-1),b=BR[1]-(BR[1]-BR[0])*j/(gh-1);const v=Math.log(kLoss(w,b));vals.push(v);lo=Math.min(lo,v);hi=Math.max(hi,v)}
+  vals.forEach((v,k)=>{const t=(v-lo)/(hi-lo);let [r,g,b]=landColor(t);const band=(v*2.2)%1;if(band<0.045){r*=0.7;g*=0.7;b*=0.7}
+    img.data[k*4]=r;img.data[k*4+1]=g;img.data[k*4+2]=b;img.data[k*4+3]=255});
+  x.putImageData(img,0,0);K.land=cv}
+const KD={x0:-15,x1:45,y0:-40,y1:130};
+function kDraw(){
+  // data panel
+  let {ctx,W,H}=prep($('k-data'));const pad={l:52,r:20,t:14,b:40};
+  const X=v=>pad.l+(v-KD.x0)/(KD.x1-KD.x0)*(W-pad.l-pad.r),Y=v=>H-pad.b-(v-KD.y0)/(KD.y1-KD.y0)*(H-pad.t-pad.b);
+  ctx.font='12px system-ui,sans-serif';ctx.strokeStyle=C.line;ctx.fillStyle=C.muted;ctx.lineWidth=1;
+  for(let t=-10;t<=40;t+=10){ctx.beginPath();ctx.moveTo(X(t),Y(KD.y0));ctx.lineTo(X(t),Y(KD.y1));ctx.stroke();ctx.textAlign='center';ctx.fillText(t+'°C',X(t),H-pad.b+18)}
+  for(let t=-40;t<=120;t+=40){ctx.beginPath();ctx.moveTo(X(KD.x0),Y(t));ctx.lineTo(X(KD.x1),Y(t));ctx.stroke();ctx.textAlign='right';ctx.fillText(t+'°F',pad.l-8,Y(t)+4)}
+  ctx.textAlign='center';ctx.fillText('input: Celsius',(pad.l+W-pad.r)/2,H-6);
+  ctx.save();ctx.beginPath();ctx.rect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);ctx.clip();
+  ctx.strokeStyle=C.loss;ctx.globalAlpha=.75;ctx.setLineDash([3,3]);
+  for(const p of K.data){ctx.beginPath();ctx.moveTo(X(p.x),Y(p.y));ctx.lineTo(X(p.x),Y(K.w*p.x+K.b));ctx.stroke()}
+  ctx.setLineDash([]);ctx.globalAlpha=1;ctx.strokeStyle=C.knob;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(X(KD.x0),Y(K.w*KD.x0+K.b));ctx.lineTo(X(KD.x1),Y(K.w*KD.x1+K.b));ctx.stroke();
+  ctx.fillStyle=C.ink;for(const p of K.data){ctx.beginPath();ctx.arc(X(p.x),Y(p.y),4,0,7);ctx.fill()}
+  ctx.restore();
+  ctx.fillStyle=C.knob;ctx.textAlign='left';ctx.font='15px system-ui,sans-serif';
+  ctx.fillText(`guess = ${K.w.toFixed(2)} × °C + ${K.b.toFixed(1)}`,pad.l+12,pad.t+22);
+  ctx.fillStyle=C.loss;ctx.font='13px system-ui,sans-serif';ctx.fillText('dashed = how wrong each guess is',pad.l+12,pad.t+42);
+  // landscape
+  ({ctx,W,H}=prep($('k-land')));const lp={l:52,r:20,t:14,b:40};const lw=W-lp.l-lp.r,lh=H-lp.t-lp.b;
+  const LX=w=>lp.l+(w-WR[0])/(WR[1]-WR[0])*lw,LY=b=>lp.t+(BR[1]-b)/(BR[1]-BR[0])*lh;
+  if(!K.land)buildLand();ctx.imageSmoothingEnabled=true;ctx.drawImage(K.land,lp.l,lp.t,lw,lh);
+  ctx.fillStyle=C.muted;ctx.font='12px system-ui,sans-serif';
+  for(let t=0;t<=3;t+=0.5){ctx.textAlign='center';ctx.fillText(t.toFixed(1),LX(t),H-lp.b+18)}
+  for(let t=-40;t<=80;t+=20){ctx.textAlign='right';ctx.fillText(t,lp.l-8,LY(t)+4)}
+  ctx.textAlign='center';ctx.fillText('w, the multiplier knob',lp.l+lw/2,H-6);
+  ctx.save();ctx.translate(14,lp.t+lh/2);ctx.rotate(-Math.PI/2);ctx.fillText('b, the offset knob',0,0);ctx.restore();
+  ctx.save();ctx.beginPath();ctx.rect(lp.l,lp.t,lw,lh);ctx.clip();
+  ctx.strokeStyle=C.ink;ctx.globalAlpha=.85;ctx.lineWidth=1.5;ctx.beginPath();
+  K.trail.forEach(([w,b],i)=>{i?ctx.lineTo(LX(w),LY(b)):ctx.moveTo(LX(w),LY(b))});ctx.stroke();ctx.globalAlpha=1;
+  const bx=LX(K.w),by=LY(K.b);
+  const[gw,gb]=kGrad(K.w,K.b);let dx=-gw*lw/(WR[1]-WR[0]),dy=gb*lh/(BR[1]-BR[0]);const m=Math.hypot(dx,dy);
+  if(m>1e-6&&!(K.cls==='good')){dx=dx/m*48;dy=dy/m*48;ctx.strokeStyle=C.knob;ctx.fillStyle=C.knob;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+dx,by+dy);ctx.stroke();
+    const a=Math.atan2(dy,dx);ctx.beginPath();ctx.moveTo(bx+dx,by+dy);ctx.lineTo(bx+dx-10*Math.cos(a-.45),by+dy-10*Math.sin(a-.45));ctx.lineTo(bx+dx-10*Math.cos(a+.45),by+dy-10*Math.sin(a+.45));ctx.fill()}
+  ctx.fillStyle=C.ink;ctx.strokeStyle=C.bg;ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx,by,8,0,7);ctx.fill();ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle=C.ink;ctx.font='13px system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('dark = low loss   bright = high loss   arrow = next nudge',lp.l+10,lp.t+20);
+  // readouts
+  $('k-wv').textContent=fmt(K.w,2);$('k-bv').textContent=fmt(K.b,1);$('k-lv').textContent=fmt(kLoss(K.w,K.b),1);$('k-sv').textContent=K.step;
+  const st=$('k-status');st.textContent=K.status;st.className='status '+K.cls;
+  $('k-run').textContent=K.running?'Pause':'Train';
+  if(document.activeElement!==$('k-w'))$('k-w').value=K.w;if(document.activeElement!==$('k-b'))$('k-b').value=K.b;}
+const kLrSeg=seg($('k-lr'),K.lrs.map(l=>l.n),()=>K.lr,i=>{K.lr=i});
+$('k-w').oninput=e=>{K.running=false;kSet(+e.target.value,K.b)};
+$('k-b').oninput=e=>{K.running=false;kSet(K.w,+e.target.value)};
+$('k-step').onclick=()=>{K.running=false;if(K.cls==='bad')return;K.status='';K.cls='';kStep()};
+$('k-run').onclick=()=>{if(K.cls)kSet(K.w,K.b,true);if(K.cls==='')K.running=!K.running};
+$('k-reset').onclick=kReset;
+$('k-land').addEventListener('click',e=>{const r=e.target.getBoundingClientRect();const lw=r.width-72,lh=r.height-54;
+  const w=WR[0]+(e.clientX-r.left-52)/lw*(WR[1]-WR[0]),b=BR[1]-(e.clientY-r.top-14)/lh*(BR[1]-BR[0]);
+  if(w>=WR[0]&&w<=WR[1]&&b>=BR[0]&&b<=BR[1]){K.running=false;kSet(w,b)}});
+
+/* ================= VIEW 2: BENDS ================= */
+const B={Hs:[1,2,4,8,16,32],hi:0,ds:0,data:[],P:null,m:null,s:null,t:0,running:false,hist:[],pieces:true,
+  sets:[{n:'Wave',f:x=>Math.sin(1.7*x)*0.9+0.15*x},{n:'Hockey stick',f:x=>0.2+0.35*Math.max(0,x-0.8)**2},{n:'Two bumps',f:x=>1.1*Math.exp(-3*(x+1.3)**2)-0.8*Math.exp(-4*(x-1.2)**2)}]};
+function bH(){return B.Hs[B.hi]}
+function bReset(){const H=bH();const r=mulberry32(11+B.ds);B.data=[];for(let i=0;i<60;i++){const x=-3+6*i/59;B.data.push({x,y:B.sets[B.ds].f(x)+gauss(r)*0.04})}
+  const q=mulberry32(300+H);B.P=new Float64Array(3*H+1);for(let j=0;j<H;j++){B.P[j]=gauss(q);B.P[H+j]=(q()*2-1)*2;B.P[2*H+j]=gauss(q)*0.5/Math.sqrt(H)}
+  B.m=new Float64Array(B.P.length);B.s=new Float64Array(B.P.length);B.t=0;B.hist=[bLoss()];B.running=false}
+function bF(x){const H=bH(),P=B.P;let y=P[3*H];for(let j=0;j<H;j++){const z=P[j]*x+P[H+j];if(z>0)y+=P[2*H+j]*z}return y}
+function bLoss(){let L=0;for(const p of B.data){const e=bF(p.x)-p.y;L+=e*e}return L/B.data.length}
+function bStep(){const H=bH(),P=B.P,g=new Float64Array(P.length);let L=0;
+  for(const p of B.data){let y=P[3*H];const z=new Array(H);for(let j=0;j<H;j++){z[j]=P[j]*p.x+P[H+j];if(z[j]>0)y+=P[2*H+j]*z[j]}
+    const e=y-p.y;L+=e*e;const de=2*e/B.data.length;g[3*H]+=de;
+    for(let j=0;j<H;j++)if(z[j]>0){g[2*H+j]+=de*z[j];g[j]+=de*P[2*H+j]*p.x;g[H+j]+=de*P[2*H+j]}}
+  B.t++;for(let i=0;i<P.length;i++){B.m[i]=0.9*B.m[i]+0.1*g[i];B.s[i]=0.999*B.s[i]+0.001*g[i]*g[i];
+    P[i]-=0.02*(B.m[i]/(1-0.9**B.t))/(Math.sqrt(B.s[i]/(1-0.999**B.t))+1e-8)}
+  B.hist.push(L/B.data.length)}
+function bTick(){if(!B.running)return;for(let i=0;i<4;i++)bStep();if(B.t>=3000)B.running=false}
+const pieceCols=['#3CC6B0','#7FA7F5','#C792EA','#F2A541','#EF6F6C','#9BD66B','#F5D76E','#6ED3F5'];
+function bDraw(){
+  let {ctx,W,H}=prep($('b-plot'));const pad={l:48,r:20,t:16,b:34};
+  let lo=Infinity,hi=-Infinity;for(const p of B.data){lo=Math.min(lo,p.y);hi=Math.max(hi,p.y)}const sp=hi-lo;lo-=sp*.35;hi+=sp*.25;
+  const X=v=>pad.l+(v+3.2)/6.4*(W-pad.l-pad.r),Y=v=>H-pad.b-(v-lo)/(hi-lo)*(H-pad.t-pad.b);
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,Y(0));ctx.lineTo(W-pad.r,Y(0));ctx.stroke();
+  ctx.save();ctx.beginPath();ctx.rect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);ctx.clip();
+  const Hn=bH(),P=B.P;
+  if(B.pieces){for(let j=0;j<Hn;j++){ctx.strokeStyle=pieceCols[j%pieceCols.length];ctx.globalAlpha=.45;ctx.lineWidth=1.5;ctx.beginPath();
+    for(let i=0;i<=200;i++){const x=-3.2+6.4*i/200;const z=P[j]*x+P[Hn+j];const y=(z>0?P[2*Hn+j]*z:0);i?ctx.lineTo(X(x),Y(y)):ctx.moveTo(X(x),Y(y))}ctx.stroke()}ctx.globalAlpha=1}
+  ctx.fillStyle=C.ink;for(const p of B.data){ctx.beginPath();ctx.arc(X(p.x),Y(p.y),3.5,0,7);ctx.fill()}
+  ctx.strokeStyle=C.loss;ctx.lineWidth=3.5;ctx.beginPath();for(let i=0;i<=400;i++){const x=-3.2+6.4*i/400;const y=bF(x);i?ctx.lineTo(X(x),Y(y)):ctx.moveTo(X(x),Y(y))}ctx.stroke();
+  for(let j=0;j<Hn;j++){if(Math.abs(P[j])<1e-6)continue;const xh=-P[Hn+j]/P[j];if(xh<-3.2||xh>3.2)continue;
+    ctx.fillStyle=pieceCols[j%pieceCols.length];ctx.beginPath();ctx.arc(X(xh),Y(bF(xh)),5.5,0,7);ctx.fill();ctx.strokeStyle=C.bg;ctx.lineWidth=1.5;ctx.stroke()}
+  ctx.restore();
+  ctx.font='14px system-ui,sans-serif';ctx.textAlign='left';ctx.fillStyle=C.loss;ctx.fillText('network output = sum of the pieces',pad.l+10,pad.t+18);
+  if(B.pieces){ctx.fillStyle=C.muted;ctx.fillText('thin lines = one hidden neuron each      dots = where each one bends',pad.l+10,pad.t+38)}
+  ({ctx,W,H}=prep($('b-loss')));lossChart(ctx,12,10,W-24,H-22,B.hist,[]);
+  $('b-lv').textContent=fmt(B.hist[B.hist.length-1],4);$('b-sv').textContent=B.t;$('b-kv').textContent=3*Hn+1;
+  $('b-run').textContent=B.running?'Pause':'Train';$('b-pieces').textContent=B.pieces?'Hide pieces':'Show pieces';
+  $('b-title').textContent=`Fitting "${B.sets[B.ds].n}" with ${Hn} hidden neuron${Hn>1?'s':''}`}
+const bDsSeg=seg($('b-ds'),B.sets.map(s=>s.n),()=>B.ds,i=>{B.ds=i;bReset()});
+const bHSeg=seg($('b-h'),B.Hs.map(String),()=>B.hi,i=>{B.hi=i;bReset()});
+$('b-run').onclick=()=>{if(B.t>=3000)return;B.running=!B.running};$('b-reset').onclick=bReset;$('b-pieces').onclick=()=>{B.pieces=!B.pieces};
+
+/* ================= VIEW 3: NEXT LETTER ================= */
+const NAMES=('aarav aditya arjun vihaan reyansh ayaan krishna ishaan shaurya atharv advik pranav advait dhruv kabir ritvik aarush kayaan darsh veer rudra arnav yash rohan rahul amit sachin rajesh suresh mahesh ganesh ramesh dinesh nitin vivek anil sunil vikram varun karan nikhil akash abhishek siddharth harsh manish sanjay vijay ajay deepak gaurav saurabh tushar omkar prasad chinmay tejas aniket sagar swapnil mayur ninad parth sahil soham vedant yogesh mangesh shreyas anand ashok bharat chetan girish hemant jayant kunal lalit mohan naresh pankaj rakesh sameer tarun uday vinay '+
+ 'aadhya ananya diya saanvi aarohi anika navya pari myra sara kiara ira riya aanya siya avni prisha anvi kavya isha neha pooja priya sneha shruti swati anjali divya kirti madhuri meera nisha pallavi radha rashmi sakshi sonali tanvi trisha vaishnavi gauri ketaki mrunal rutuja sayali shravani tejaswini aishwarya bhavana chaitra deepa gayatri jyoti kalyani lata manasi namrata padma rekha sunita usha varsha yamini aparna archana asmita harshada janhavi kasturi leena mitali prajakta rasika shivani smita supriya vrushali amruta aditi ishita juhi komal lavanya mansi nandini rupali snehal tanaya').split(' ');
+const CH='.abcdefghijklmnopqrstuvwxyz';const ci=c=>CH.indexOf(c);
+const N={Cnt:[],rowN:[],total:0,W:null,step:0,running:false,hist:[],opt:0,base:Math.log(27),lr:30,samples:[]};
+(function(){for(let i=0;i<27;i++){N.Cnt.push(new Array(27).fill(0));N.rowN.push(0)}
+  for(const nm of NAMES){const s='.'+nm+'.';for(let k=0;k<s.length-1;k++){const a=ci(s[k]),b=ci(s[k+1]);N.Cnt[a][b]++;N.rowN[a]++;N.total++}}
+  let L=0;for(let i=0;i<27;i++)for(let j=0;j<27;j++)if(N.Cnt[i][j])L-=N.Cnt[i][j]*Math.log(N.Cnt[i][j]/N.rowN[i]);N.opt=L/N.total})();
+function nProbs(){const P=[];for(let i=0;i<27;i++){const row=N.W[i];let m=-Infinity;for(const v of row)m=Math.max(m,v);let s=0;const e=row.map(v=>{const x=Math.exp(v-m);s+=x;return x});P.push(e.map(x=>x/s))}return P}
+function nLoss(P){let L=0;for(let i=0;i<27;i++)for(let j=0;j<27;j++)if(N.Cnt[i][j])L-=N.Cnt[i][j]*Math.log(P[i][j]);return L/N.total}
+function nSample(P){const r=mulberry32(42);const out=[];for(let k=0;k<10;k++){let s='',c=0;while(true){const u=r();let acc=0,nx=26;for(let j=0;j<27;j++){acc+=P[c][j];if(u<acc){nx=j;break}}if(nx===0)break;s+=CH[nx];c=nx;if(s.length>=12){s+='…';break}}out.push(s||'(empty)')}return out}
+function nReset(){N.W=[];for(let i=0;i<27;i++)N.W.push(new Array(27).fill(0));N.step=0;N.running=false;const P=nProbs();N.P=P;N.hist=[nLoss(P)];N.samples=nSample(P)}
+function nStep(){const P=N.P;for(let i=0;i<27;i++)for(let j=0;j<27;j++){const g=(N.rowN[i]*P[i][j]-N.Cnt[i][j])/N.total;N.W[i][j]-=N.lr*g}
+  N.step++;N.P=nProbs();N.hist.push(nLoss(N.P));if(N.step%5===0||N.step<5)N.samples=nSample(N.P)}
+function nTick(){if(!N.running)return;if(N.frame=(N.frame||0)+1,N.frame%2)return;nStep();if(N.step>=400)N.running=false}
+function nDraw(){
+  let {ctx,W,H}=prep($('n-heat'));const P=N.P;const lab=22;const cell=Math.min((W-lab-16)/27,(H-lab-12)/27);const ox=lab+8,oy=lab+4;
+  ctx.font=Math.max(10,Math.min(14,cell*0.55))+'px Georgia,serif';ctx.textAlign='center';ctx.fillStyle=C.muted;
+  for(let j=0;j<27;j++)ctx.fillText(CH[j],ox+j*cell+cell/2,oy-7);
+  ctx.textAlign='right';for(let i=0;i<27;i++)ctx.fillText(CH[i],ox-6,oy+i*cell+cell*0.68);
+  for(let i=0;i<27;i++)for(let j=0;j<27;j++){const t=Math.min(1,Math.sqrt(P[i][j]/0.5));const [r,g,b]=landColor(t*0.999);
+    ctx.fillStyle=`rgb(${r},${g},${b})`;ctx.fillRect(ox+j*cell+.5,oy+i*cell+.5,cell-1,cell-1)}
+  ctx.fillStyle=C.muted;ctx.font='12px system-ui,sans-serif';ctx.textAlign='left';ctx.fillText('"." means start or end of a name',ox,oy+27*cell+14>H?H-2:oy+27*cell+14);
+  // samples
+  $('n-samples').innerHTML=N.samples.map(s=>`<div>${s}</div>`).join('');
+  // probe
+  const word=($('n-probe').value||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,14);const s='.'+word+'.';let tot=0,html='';
+  for(let k=0;k<s.length-1;k++){const p=P[ci(s[k])][ci(s[k+1])];const sur=-Math.log(p);tot+=sur;
+    html+=`<div class="pc"><div class="bx"><i style="height:${Math.min(100,sur/6*100)}%"></i></div><div class="ch">${s[k+1]==='.'?'end':s[k+1]}</div><div>${Math.round(p*100)}%</div></div>`}
+  $('n-bars').innerHTML=html;const avg=tot/(s.length-1);
+  $('n-surp').innerHTML=word?`Average surprise <b style="color:var(--loss)">${avg.toFixed(2)}</b> &nbsp;(knew nothing = ${N.base.toFixed(2)}). Taller bar = more surprised.`:'Type a name above.';
+  ({ctx,W,H}=prep($('n-loss')));lossChart(ctx,16,8,W-32,H-18,N.hist,[{v:N.base,t:'knows nothing: 3.30',c:C.muted},{v:N.opt,t:`best possible with one-letter memory: ${N.opt.toFixed(2)}`,c:C.knob}]);
+  $('n-lv').textContent=N.hist[N.hist.length-1].toFixed(3);$('n-sv').textContent=N.step;$('n-dv').textContent=N.total.toLocaleString();
+  $('n-run').textContent=N.running?'Pause':'Train';
+  const st=$('n-status');if(N.step>=400){st.textContent='Done. Every one of those 729 numbers got its value from nudges like these.';st.className='status good'}else{st.textContent='';st.className='status'}}
+$('n-step').onclick=()=>{N.running=false;nStep()};$('n-run').onclick=()=>{if(N.step>=400)return;N.running=!N.running};$('n-reset').onclick=nReset;
+
+/* ================= app shell ================= */
+let view=1;
+const KEYS={1:'<kbd>Space</kbd> train &nbsp;<kbd>N</kbd> nudge once &nbsp;<kbd>L</kbd> step size &nbsp;<kbd>R</kbd> reset',
+  2:'<kbd>Space</kbd> train &nbsp;<kbd>H</kbd> neurons &nbsp;<kbd>D</kbd> data &nbsp;<kbd>P</kbd> pieces &nbsp;<kbd>R</kbd> reset',
+  3:'<kbd>Space</kbd> train &nbsp;<kbd>N</kbd> nudge once &nbsp;<kbd>R</kbd> reset &nbsp;type a name to test it'};
+function show(v){view=v;document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v'+v));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',+b.dataset.v===v));$('keys').innerHTML=KEYS[v]}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(+b.dataset.v));
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'&&e.target.type==='text'){if(e.key==='Escape')e.target.blur();return}
+  const k=e.key.toLowerCase();
+  if(k==='1'||k==='2'||k==='3'){show(+k);return}
+  if(view===1){if(k===' '){e.preventDefault();$('k-run').click()}else if(k==='n')$('k-step').click();else if(k==='r')kReset();else if(k==='l'){K.lr=(K.lr+1)%3;kLrSeg()}}
+  if(view===2){if(k===' '){e.preventDefault();$('b-run').click()}else if(k==='r')bReset();else if(k==='p')B.pieces=!B.pieces;
+    else if(k==='h'){B.hi=(B.hi+1)%B.Hs.length;bReset();bHSeg()}else if(k==='d'){B.ds=(B.ds+1)%B.sets.length;bReset();bDsSeg()}}
+  if(view===3){if(k===' '){e.preventDefault();$('n-run').click()}else if(k==='n')$('n-step').click();else if(k==='r')nReset()}
+});
+kReset();bReset();nReset();show(1);
+function loop(){try{if(view===1){kTick();kDraw()}else if(view===2){bTick();bDraw()}else{nTick();nDraw()}}catch(err){console.error(err)}requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
