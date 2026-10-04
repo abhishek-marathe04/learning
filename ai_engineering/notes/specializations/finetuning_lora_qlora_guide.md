@@ -69,7 +69,7 @@ When you do full fine-tuning on your Confluence data, the gradient descent optim
 
 The optimizer has no concept of "preserve what was already learned." It just pushes weights toward fitting your new data. If your Confluence dataset is 50,000 pages (say, 50M tokens), but the model was pretrained on 2 trillion tokens, the signal from your new data is proportionally enormous. The weights shift dramatically toward Confluence, and the general intelligence that took trillions of tokens to build gets overwritten.
 
-![Catastrophic Forgetting Diagram](fine_tuning_assets/02_catastrophic_forgetting.svg)
+![Catastrophic Forgetting Diagram](../../assets/fine_tuning_assets/02_catastrophic_forgetting.svg)
 
 **What you end up with after full fine-tuning on domain data:**
 - Excellent answers to Confluence-specific questions
@@ -111,7 +111,7 @@ Compare that to the original matrix: `4096 × 4096 = 16,777,216` parameters.
 
 **LoRA trains 256× fewer parameters** for this one layer. Across the whole model, the savings are similar.
 
-![LoRA Mechanism Diagram](fine_tuning_assets/01_lora_mechanism.svg)
+![LoRA Mechanism Diagram](../../assets/fine_tuning_assets/01_lora_mechanism.svg)
 
 ### Why does this work?
 
@@ -163,7 +163,7 @@ This is where intuition breaks down for many people. The question is: **if W is 
 
 The answer: **W is used in the forward pass (its knowledge shapes the error signal), but it is never modified.**
 
-![LoRA Training Step Diagram](fine_tuning_assets/03_lora_training_step.svg)
+![LoRA Training Step Diagram](../../assets/fine_tuning_assets/03_lora_training_step.svg)
 
 ### Step-by-step: one training iteration
 
@@ -290,13 +290,13 @@ nf4:       7B params × 0.5 bytes = 3.5 GB (fits on RTX 3090, 4090, A10)
 
 Quantization reduces the number of bits used to store each weight value, shrinking the memory footprint at the cost of some precision.
 
-![Quantization Precision Levels](fine_tuning_assets/04_quantization_precision.svg)
+![Quantization Precision Levels](../../assets/fine_tuning_assets/04_quantization_precision.svg)
 
 ### How quantization works
 
 The core operation: **map a continuous range of float values onto a small set of integer buckets.**
 
-![Quantization Mechanics](fine_tuning_assets/05_quantization_mechanics.svg)
+![Quantization Mechanics](../../assets/fine_tuning_assets/05_quantization_mechanics.svg)
 
 **Step 1 — Find the range and compute scale:**
 
@@ -358,7 +358,7 @@ NF4 has only 16 possible values (2^4 = 16 buckets). But those 16 values are plac
 3. **Double quantization** — even the scale factors themselves are quantized to save ~0.5 GB more
 4. **Paged optimizers** — spills optimizer states to CPU RAM when GPU VRAM is full, preventing OOM crashes
 
-![QLoRA Architecture](fine_tuning_assets/06_qlora_architecture.svg)
+![QLoRA Architecture](../../assets/fine_tuning_assets/06_qlora_architecture.svg)
 
 ### Memory breakdown during QLoRA training
 
@@ -425,7 +425,7 @@ GPU VRAM available?
 
 ## 12. Applying This: Fine-Tuning on Confluence Data
 
-![Confluence Pipeline](fine_tuning_assets/07_confluence_pipeline.svg)
+![Confluence Pipeline](../../assets/fine_tuning_assets/07_confluence_pipeline.svg)
 
 ### Phase 1: Data Preparation
 

@@ -1,2 +1,30 @@
+# macOS
+.DS_Store
+
+# Editor/IDE
+.obsidian/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Jupyter
+*.ipynb
+
+# Environment variables
+.env
+
+# Temporary files
+Untitled.canvas
+names.txt
+
+# Project-specific
 ai_engineering/demo/.venv
 ai_engineering/demo/.env

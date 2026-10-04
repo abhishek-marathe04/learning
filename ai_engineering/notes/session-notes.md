@@ -197,52 +197,52 @@ Reproduce the SemIf-style readout: take a small Qwen model, pack a state plus a 
 ## Diagrams
 
 ### 1. Overview: LLM writes word by word, Jev scores all options in one trip
-![LLM word-by-word generation vs Jev single-pass option scoring](jev_assets/01-llm-vs-jev-overview.svg)
+![LLM word-by-word generation vs Jev single-pass option scoring](../assets/jev_assets/01-llm-vs-jev-overview.svg)
 
 Each orange box is a full trip through the model; Jev does one trip and returns a probability per option.
 
 ### 2. Reading is parallel, writing is sequential
-![Reading all words at once vs writing one word per trip](jev_assets/02-reading-parallel-vs-writing-sequential.svg)
+![Reading all words at once vs writing one word per trip](../assets/jev_assets/02-reading-parallel-vs-writing-sequential.svg)
 
 Prefill processes all prompt tokens side by side in one pass; decode needs a separate, dependent trip per token.
 
 ### 3. Where the time goes
-![Time breakdown: reasoning LLM vs Jev](jev_assets/03-time-breakdown-thinking-llm-vs-jev.svg)
+![Time breakdown: reasoning LLM vs Jev](../assets/jev_assets/03-time-breakdown-thinking-llm-vs-jev.svg)
 
 Hidden thinking tokens dominate a reasoning LLM's latency; Jev only has the reading slice.
 
 ### 4. Model size (likely)
-![General LLM as tall layer stack vs Jev as short stack](jev_assets/04-model-size-llm-vs-jev.svg)
+![General LLM as tall layer stack vs Jev as short stack](../assets/jev_assets/04-model-size-llm-vs-jev.svg)
 
 Jev's size is undisclosed; a narrower job plausibly allows a smaller model, making each trip cheaper.
 
 ### 5. Output format safety
-![LLM free-text outputs vs Jev fixed options](jev_assets/05-output-format-safety.svg)
+![LLM free-text outputs vs Jev fixed options](../assets/jev_assets/05-output-format-safety.svg)
 
 Free text can be misspelled, chatty, or broken JSON; Jev can only return one of your listed options.
 
 ### 6. Calibration
-![Both say 90% sure: Jev 9/10 right, LLM 7/10 right](jev_assets/06-calibration-90-percent.svg)
+![Both say 90% sure: Jev 9/10 right, LLM 7/10 right](../assets/jev_assets/06-calibration-90-percent.svg)
 
 Illustration of calibrated vs overconfident models; the exact 7/10 is illustrative.
 
 ### 7. One quick look vs step-by-step thinking
-![Jev one look reaches easy goals but falls short on hard ones; LLM climbs via thinking steps](jev_assets/07-one-look-vs-step-by-step.svg)
+![Jev one look reaches easy goals but falls short on hard ones; LLM climbs via thinking steps](../assets/jev_assets/07-one-look-vs-step-by-step.svg)
 
 The thinking tokens that make LLMs slow are also what let them solve hard, multi-step problems.
 
 ### 8. Prefill vs decode: carrying the weights
-![Weights carried once for prefill vs once per word for decode](jev_assets/08-prefill-vs-decode-memory-carrying.svg)
+![Weights carried once for prefill vs once per word for decode](../assets/jev_assets/08-prefill-vs-decode-memory-carrying.svg)
 
 The core hardware reason decode is slow: memory traffic, not math.
 
 ### 9. Question packing with answer slots
-![Your data plus three masked questions with answer slots in one pass](jev_assets/09-jev-question-packing-answer-slots.svg)
+![Your data plus three masked questions with answer slots in one pass](../assets/jev_assets/09-jev-question-packing-answer-slots.svg)
 
 Each question reads the shared data but not other questions; all answer slots are filled in the same pass.
 
 ### 10. Next-word scores come free after reading
-![Last position of prefill yields next-token scores over the vocabulary](jev_assets/10-prefill-next-word-scores.svg)
+![Last position of prefill yields next-token scores over the vocabulary](../assets/jev_assets/10-prefill-next-word-scores.svg)
 
 The distribution for the first output token is a by-product of the prefill pass.
 

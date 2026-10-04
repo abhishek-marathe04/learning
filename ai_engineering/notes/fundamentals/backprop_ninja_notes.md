@@ -61,7 +61,7 @@ The four exercises in the lecture:
 
 ## 3. Step 1 — Embedding lookup `C[Xb]`
 
-![Embedding lookup diagram](backprop_ninja_assets/01_embedding_lookup.png)
+![Embedding lookup diagram](../../assets/backprop_ninja_assets/01_embedding_lookup.png)
 
 ### What is C?
 
@@ -102,7 +102,7 @@ The same character always gets the same vector. If 'b' (index 1) appears 50 time
 
 ## 4. Step 2 — Reshape `.view()`
 
-![Reshape diagram](backprop_ninja_assets/02_view_reshape.png)
+![Reshape diagram](../../assets/backprop_ninja_assets/02_view_reshape.png)
 
 ### Why reshape?
 
@@ -135,7 +135,7 @@ Every gradient value drops straight back to where its forward value came from. N
 
 ## 5. Step 3 — Linear Layer 1 `@ W1 + b1`
 
-![Matrix multiply gradient](backprop_ninja_assets/03_matmul_gradient.png)
+![Matrix multiply gradient](../../assets/backprop_ninja_assets/03_matmul_gradient.png)
 
 ```python
 hprebn = embcat @ W1 + b1
@@ -176,7 +176,7 @@ db1     = dhprebn.sum(0)
 
 ## 6. Step 4 — BatchNorm (all 7 sub-steps)
 
-![BatchNorm steps](backprop_ninja_assets/04_batchnorm_steps.png)
+![BatchNorm steps](../../assets/backprop_ninja_assets/04_batchnorm_steps.png)
 
 ### Why BatchNorm exists
 
@@ -245,7 +245,7 @@ bnvar_inv = (bnvar + 1e-5) ** -0.5
 
 This is `1 / √variance` — the exact multiplier needed to bring any neuron's spread to 1.
 
-![Variance intuition](backprop_ninja_assets/05_variance_intuition.png)
+![Variance intuition](../../assets/backprop_ninja_assets/05_variance_intuition.png)
 
 **Why the inverse?**
 
@@ -338,7 +338,7 @@ Maps 200 hidden units → 27 output scores (one per vocabulary character). Same 
 
 ## 9. Step 7 — Cross-Entropy Loss
 
-![Cross-entropy pipeline](backprop_ninja_assets/06_cross_entropy_pipeline.png)
+![Cross-entropy pipeline](../../assets/backprop_ninja_assets/06_cross_entropy_pipeline.png)
 
 `F.cross_entropy(logits, Yb)` does this entire pipeline internally. Karpathy splits it into 6 atomic lines so each has a simple derivative.
 
