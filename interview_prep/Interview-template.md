@@ -20,26 +20,39 @@ Signals of real experience vs recitation:
 - Recited: textbook lists in perfect order, no failures, "we" with no clear personal role.
 - AI-assisted: long pauses then polished paragraphs, eyes moving off-screen, falls apart when you change one constraint.
 
-## 1. Coding: idempotent event processor
+## 1. Coding: log analyzer (any language)
 
-**Question:** Process a stream of payment events. Events may arrive more than once. Process each exactly once in effect, at most 10 at a time, retry failures up to 3 times.
+**Question:** Here are some web server log lines:
 
-**Model answer, in plain terms:**
+```
+2026-10-14T10:00:01Z GET /api/orders 200 120ms
+2026-10-14T10:00:02Z POST /api/payments 500 900ms
+2026-10-14T10:00:03Z GET /api/orders 200 80ms
+2026-10-14T10:00:04Z GET /api/users 404 30ms
+```
 
-1. **Clarify first.** Good candidates ask: Where do events come from? What is the unique key? What happens if the process crashes mid-event? Is order important?
-2. **Idempotency.** Every event needs a unique ID. Before processing, check a durable store (DB table with a unique constraint, or Redis with expiry). Record "processed" in the same transaction as the business effect, so a crash can't leave one without the other. An in-memory set alone is wrong: it is lost on restart.
-3. **Bounded concurrency.** A worker pool of 10, or a semaphore with 10 permits. Unbounded threads or goroutines exhaust memory, DB connections and downstream services.
-4. **Retries with backoff.** Retry only transient errors (timeouts, 503s), not validation failures. Use exponential backoff with jitter (e.g. 200ms, 400ms, 800ms, plus randomness) so retries don't hit the system all at once.
-5. **Dead-letter path.** After 3 failures, move the event to a dead-letter queue with the error, and alert. Never drop silently.
-6. **Acknowledge last.** Only acknowledge the message to the queue after processing succeeds, so a crash means redelivery, not loss.
+Write a function that reads these lines and prints, for each endpoint: the number of requests, how many were server errors (status 500–599), and the average response time. Then list the 3 slowest endpoints.
 
-**Twist: two instances run in parallel.** In-memory dedup and in-memory locks no longer work. Expected answers:
+Why this works: the code is short and easy for you to follow in any language, it's close to real on-call work, and the follow-ups reveal how they think about scale and failure.
 
-- Rely on the DB unique constraint: the second insert fails, and that instance skips the event.
-- Or partition the stream by key (e.g. Kafka partitions) so one instance owns each payment.
-- Distributed locks are possible but a weaker answer: they add failure modes like expired locks.
+**What a good solution looks like:**
 
-**Red flags:** "exactly once is guaranteed by the queue", no crash scenario, retrying every error including bad input.
+1. **Asks a few questions first.** Is the method part of the endpoint (`GET /api/orders` vs `POST /api/orders`)? What if a line is malformed? How big is the file?
+2. **Splits each line into parts** (time, method, path, status, duration) and converts status and duration to numbers.
+3. **Uses a map/dictionary** keyed by endpoint, holding count, error count and total time.
+4. **Calculates averages at the end** (total time ÷ count), then sorts by average to get the top 3.
+5. **Handles bad lines** by skipping them and counting how many were skipped, instead of crashing.
+6. **Mentions or writes a quick test** with the sample lines above.
+
+**Follow-ups, one at a time (pick 2 or 3):**
+
+- **"The file is 50 GB."** Good: read it line by line (streaming) instead of loading it all into memory. Memory then depends on the number of endpoints, not the file size.
+- **"A line says `abc` instead of a status code."** Good: skip and count it, maybe log a sample. Bad: the program crashes.
+- **"Show the 95th percentile time instead of the average."** Good: explains that an average hides slow outliers. Needs all durations per endpoint (sort and pick the 95% position) or a histogram/bucketing approach for large data.
+- **"Logs now come from 20 servers."** Good: each server produces its own summary and they are merged. Counts and totals add up easily; percentiles don't, which is why histograms are used.
+- **"How would you get this in production without writing code?"** Good: ship logs to a central system (ELK, Loki, Datadog, CloudWatch) or emit metrics directly from the app.
+
+**Red flags:** can't start without help, loads the whole file into memory without noticing the issue, crashes on one bad line, can't explain their own code line by line.
 
 ## 2. Pseudocode review: the dual-write problem
 
