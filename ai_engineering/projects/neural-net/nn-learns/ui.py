@@ -30,4 +30,4 @@ def reset_button(keys, label: str = "Reset", key: str | None = None):
 
 def chart(fig, **kwargs):
     """st.plotly_chart with the shared no-toolbar config."""
-    st.plotly_chart(fig, config=PLOTLY_CONFIG, use_container_width=True, **kwargs)
+    st.plotly_chart(fig, config=PLOTLY_CONFIG, width='stretch', **kwargs)

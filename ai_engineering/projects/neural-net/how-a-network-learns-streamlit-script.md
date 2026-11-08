@@ -306,6 +306,8 @@ None of it was magic: multiplication, a scoreboard, and patience. Karpathy's "Ze
 - **"Then why is ChatGPT helpful, not just autocomplete?"** Pre-training is next-token prediction. A second phase (fine-tuning, RLHF) runs the same loop with a different score: human preference.
 - **"Fine-tuning / LoRA?"** Same loop, starting from trained knobs. LoRA trains a small add-on set of knobs.
 - **"Where do transformers fit?"** They're the recipe: they decide what the knobs are wired to, not how they learn.
+- **"What are the coloured lines / hidden neurons on Bends?"** Each hidden neuron is one hinge: `v · ReLU(w·x + b)`, flat at 0 until its bend point `x = −b/w`, then sloped. Each coloured line is one neuron's contribution (**Show pieces**). The orange curve is their sum plus a constant offset, so the network is literally the sum of its pieces. The dots mark where each neuron bends.
+- **"Why change the number of hidden neurons?"** It sets capacity: how many bends the curve can have. Too few (H = 1) can't fit a wave no matter how long you train, because the loss flattens. Enough (H = 8) and gradient descent places the bends itself. Each neuron adds three knobs (w, b, v), so the knob count (3H + 1) grows with H.
 - **Don't know?** "Good question — grab me after, I don't want to guess on stage."
 
 ## Timing map
