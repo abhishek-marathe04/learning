@@ -49,6 +49,5 @@ def warm_up():
     cached_loss_surface()
     for lr_name in neuron.LR_PRESETS:
         cached_gd(lr_name)
-    cached_mlp("Wave", 4)
-    cached_mlp("Wave", 8)
+    # Bends (cached_mlp) is computed lazily, only for the shape/H the user picks.
     cached_bigram()
