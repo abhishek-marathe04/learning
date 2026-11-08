@@ -253,23 +253,125 @@ The leap. An LLM is trained on one task: predict the next token. Given `for i in
 
 ## 11 · APP Page 5 — Next letter  (16:00)
 
+### Prep: read this before the talk (not spoken)
+
+**What the model actually is.** A 27 × 27 grid of numbers, W. The 27 tokens are `.` plus a–z. `.` marks both the start and the end of a name, so `aarav` is read as `. a a r a v .`. Row = the letter it is looking at now. Column = the letter it guesses next. To predict, it takes the row for the current letter and turns those 27 numbers into probabilities that sum to 100% (softmax). That's the whole model. It has no memory beyond the one previous letter.
+
+**What training does.** The data is 1,162 (current, next) letter pairs cut from 174 Indian first names. Each step it scores its surprise on every pair, backprop gives the slope for all 729 knobs, and it nudges them all at once. It's plain gradient descent with learning rate 30, run for 400 steps. This is the same loop as pages 1–2. Only the score changed, from squared miss to surprise.
+
+**Surprise, in one line.** Surprise = −ln(p), where p is the probability it gave the letter that really came next.
+
+| p it gave the right letter | surprise |
+|---|---|
+| 100% | 0 |
+| 72% (`y` → `a`) | 0.33 |
+| 1 in 27 = 3.7% (pure guess) | 3.30 |
+| ~0% | very large |
+
+Loss = average surprise over all pairs. Lower = less surprised = better predictions.
+
+**What each panel shows.**
+
+- **Heatmap ("What follows what").** It shows each row's probabilities. Dark navy is near 0%, teal is in the middle, and amber is the most likely next letter. The colour scale is fixed across all steps, so step 0 looks uniformly dark and the grid "lights up" as it learns.
+  - **Top row (`.`)** shows how names *start*. The top picks are a 18%, s 16%, r 9%, then m and k.
+  - **Left column (`.`)** shows how names *end*. Names often end after l, i, h, a.
+  - **Brightest cell: `c` → `h` at 98%.** Almost every c in the data is followed by h, as in sachin, chinmay, chetan, chaitra. It's a good cell to point at.
+  - **Rows f, q, x, z stay perfectly flat at 3.7% each.** Those letters never appear in any name, so those rows are never used and never get a single nudge. They stay exactly at their starting zeros, which means "no idea".
+  - **Columns f, q, x, z go dark** in every *other* row. They are never the right answer, so every nudge pushes them down. The model learned "these letters never come next" but has no idea what follows them.
+- **"Names it invents right now."** It starts at `.`, draws a letter from the probabilities, and repeats until it draws `.` again. Names are capped at 12 letters plus "…". The random seed is fixed, so the same dice rolls are used at every step. Any change you see is learning, not luck.
+- **"How surprised is it by this name?"** It shows one bar per transition in `.name.`, including the final "→." (the name ends here). Bar height = surprise. The % under each bar is the probability it gave that letter.
+- **Loss curve.** The amber line is the loss over training. The teal dotted line is the current step. The two dashed lines are the "knows nothing" ceiling and the floor.
+  - **Ceiling: 3.30 = ln 27.** That's guessing uniformly among 27 letters, and it's exactly where step 0 sits.
+  - **Floor: 2.05.** This is the best any model that only sees one previous letter can ever do on this data. It's computed exactly from counting the pairs. Training ends at 2.06, essentially on the floor. **It cannot go lower.** The model isn't broken; one letter of context just isn't enough. That's the bridge to LLMs, which have more context.
+
+**What Play does.** It starts at step 0 and walks through the 16 saved snapshots: steps 0, 1, 2, 3, 5, 8, 12, 20, 30, 50, 75, 100, 150, 200, 300, 400. One pass takes about 6 seconds and stops at 400. *Everything* moves together: the heatmap, the names, the surprise bars, and the dotted line on the loss curve. The early snapshots are close together because that's where all the change happens. Pressing Play at the end restarts from 0.
+
+**The story in numbers (what the audience will see).**
+
+| step | loss | sample names on screen |
+|---|---|---|
+| 0 | 3.30 | tkwrbztucljy…, qvkfnavqtizx…, ueladrtzhjle… |
+| 5 | 2.53 | shsjayptalhw…, shba, rilshfoh, shltila |
+| 20 | 2.23 | shni, pashi, wwtama, arkkpera |
+| 400 | 2.06 | shni, vit, mavitaan, shi, vrsha, rershana |
+
+- **Steps 0–5:** the loss falls fastest here. It learns letter frequency first: common letters (a, s, r, h, n) get brighter everywhere.
+- **Steps 5–30:** pairs appear: `sh`, `an`, `ch`, names ending in a / i. Names get short and pronounceable.
+- **After ~75:** the names barely change. It has hit the one-letter floor. More training doesn't help, just as on page 4 a too-small model plateaued.
+- **Be honest about the result.** "vrsha" and "mavitaan" are *name-shaped*, not real names. That's the point. Each letter only looks at the one before it.
+
+**Names to type, with what you'll get (final step).**
+
+| name | average surprise | why |
+|---|---|---|
+| anita | 1.58 | every pair is common, so short bars |
+| priya | 1.73 | `y` → `a` is 72%, a very short bar |
+| aarav (default) | 2.15 | `a` → `a` is only 4%, one tall bar |
+| rahul | 2.66 | `a` → `h` → `u` is rare in this data |
+| farhan | 3.59 | `f` never seen: a huge first bar, then a flat 3.7% guess after it |
+| zoya | 3.77 | same story with `z` |
+
+- If the audience member's name has **f, q, x or z**, celebrate it. It's the best demo: a giant bar exactly where the unseen letter is.
+- At **step 0**, *every* name scores 3.30, because every letter is a 3.7% guess. If someone types a name before you press Play, that's a nice "it knows nothing yet" moment.
+- Tall bar ≠ "wrong name". It means "this pair was rare in what I read". That's the setup for slide 20's "trained to be unsurprising, not correct."
+
+**Gotchas.**
+
+- Pre-flight: press **Reset** on this page so it opens at step 0 with gibberish. If it opens on real-looking names, you're at the end. Press **Reset**.
+- Don't drag the slider *while* it's playing. Let the pass finish, then rewind.
+- The name box is case-insensitive and silently drops anything outside a–z, such as spaces, hyphens and accented letters. "Aarav" and "aarav" score the same.
+- Samples are fixed by the seed, so they're identical in rehearsal and on stage. You can memorise them.
+
+**Likely questions on this page.**
+
+- **"Why does it stop at 2.05 and not 0?"** With one letter of memory, after `a` the next letter genuinely could be n, r, v, `.`… It can't know which. Only more context lowers the floor. That's what LLMs buy with thousands of tokens.
+- **"Why are f/q/x/z rows flat if it's trained?"** Those letters never appear in the data, so their rows never get a gradient. No data means no nudges, so the model stays at "no idea".
+- **"Why learning rate 30? Page 2 used tiny steps."** Here the gradients are tiny, because each knob affects only a few pairs out of 1,162. A big step size compensates. It's the same rule (knob −= lr × slope).
+- **"Is this how GPT works?"** It's the same training loop and the same loss (cross-entropy, i.e. surprise). The difference is that GPT predicts tokens from thousands of tokens of context through a transformer, with ~10¹¹ knobs instead of 729.
+
+### On stage
+
 `[APP: Page 5 — Next letter]`
 
-A real language model — tiny. It learns Indian first names letter by letter, looking only at the previous letter. An LLM looks at thousands of tokens, but the learning is identical. A 27-by-27 grid: 729 knobs, all starting at zero.
+A real language model — tiny. It learns Indian first names, letter by letter, looking only at the previous letter. An LLM looks at thousands of tokens, but the learning is identical.
 
-Left: what it thinks comes next — row is the current letter, column the next. Completely flat: every letter equally likely. Top right: names it invents right now. *(read two gibberish samples)* Nonsense. Loss 3.30 — the "knows nothing" line.
+*(point at the heatmap)*
 
-*(press **play**)*
+This grid is the whole model: 27 by 27, so 729 knobs, all starting at zero. The row is the letter it just saw. The column is what it guesses comes next. Right now it's completely flat: every letter equally likely, a 1-in-27 guess.
 
-Watch the heatmap light up, and watch the names... they stop being noise and become name-shaped. The loss drops toward the green line — the best any one-letter-memory model can do on this data. Rows for f, q and x stay flat: it never saw them, so it stays unsure.
+*(point at the names)*
 
-*(drag the **training step** slider back to about step 5, then forward)*
+Here are names it invents right now. *(read two: "tkwrbztucljy", "qvkfnavqtizx")* Nonsense. And the loss down here: 3.30 — the "knows nothing" line.
+
+The score is new: **surprise**. When it guesses the next letter, we check how much probability it gave the real one. Gave it 100%: zero surprise. Gave it a 1-in-27 guess: 3.30. Loss is just the average surprise. Same loop as before — backprop, nudge, repeat.
+
+*(press **▶ Play**)*
+
+Watch it learn. First it figures out which letters are common at all... then which letters go together. *(names start shortening)* The names stop being noise... and become name-shaped. And the loss slides down toward the green line.
+
+*(when it stops, point at the `c` row)*
+
+Look at this bright cell: after `c` it's 98% sure of `h`. Sachin, chinmay, chetan — it worked that out from nudges alone. Nobody told it.
+
+*(point at rows f, q, x, z)*
+
+And these rows stayed flat. No name in the data has an f, q, x or z, so those knobs never got a single nudge. No data, no learning. It just stays unsure.
+
+*(point at the green dashed line)*
+
+And it stops here, about 2.05, the best *any* model can do when it only sees one letter back. After an "a", the next letter could be n, r, v or the end of the name — one letter of context can't tell. That's exactly why LLMs look at thousands of tokens.
+
+*(drag the **training step** slider back to about step 5, then forward to 400)*
 
 Rewind: gibberish. Forward: names. Every one of those 729 numbers got its value from nudges exactly like the one we did by hand on page 1.
 
-*(click the name box, type an audience member's name)*
+*(click the name box, ask for a volunteer's name, type it)*
 
-How surprised is it by this name? Short bar: "expected that." Tall bar: "whoa."
+How surprised is it by your name? One bar per letter. Short bar: "I expected that." Tall bar: "whoa, didn't see that coming."
+
+*(if the name has f, q, x or z, point at the giant bar: "Never seen that letter in its life." Otherwise try **farhan** for the same effect.)*
+
+A tall bar doesn't mean the name is wrong. It just means it didn't see that pattern much. Hold that thought — it's the first lesson for Monday.
 
 ---
 
