@@ -10,11 +10,11 @@
 - **Bold button names** = click that control in the app.
 - `(m:ss)` = running clock.
 
-## What changed from the HTML version
+## What changed from the original slide demos
 
 - **Page 1 (Keep score)** replaces slides 8–9. You do the wiggle test and the nudge live, and PyTorch confirms the numbers.
 - **Page 3 (Backprop)** replaces slide 13. The backward pass happens one click at a time.
-- Pages 2, 4 and 5 are the three original demos, now with a scrub slider, so you can rewind training.
+- Pages 2, 4 and 5 are the three original demos, now running live in the app. Each training run is precomputed, so you can replay it step by step.
 - **Skip slides 8, 9 and 13** (hide them in PowerPoint). Everything else in the deck stays.
 
 ## Pre-flight (30 minutes before)
@@ -28,7 +28,7 @@
    - Page 4 is on **Wave, 1 neuron**.
    - Page 5 is at step **0**.
 5. Deck on slide 1, presenter view on, slides 8, 9 and 13 hidden.
-6. Backup: `index.html` open in a sixth tab. If the app misbehaves, switch to it and keep talking.
+6. Backup: if a page misbehaves, press **Reset** on that page and keep talking.
 
 ## The numbers you must know cold
 
@@ -239,7 +239,7 @@ Eight neurons. The orange curve snaps into shape. The thin coloured lines are ea
 
 Nobody assigned the jobs. Nobody told neuron 3 to handle the left dip. Each neuron found its role because the gradient kept saying "you — move a bit this way."
 
-*(optional: drag the **training step** slider back to watch the bends migrate into place; toggle **Show pieces** off to show the clean fit)*
+*(optional: press **Play** again to replay the bends moving into place; toggle **Show pieces** off to show the clean fit)*
 
 ---
 
@@ -299,7 +299,7 @@ None of it was magic: multiplication, a scoreboard, and patience. Karpathy's "Ze
 
 ## Q&A — likely questions
 
-- **"Is that really PyTorch?"** Yes. Open page 6 (or the repo) and show the training loop. The demos precompute each run once and play it back, so what you scrub through is the real training history.
+- **"Is that really PyTorch?"** Yes. Open `nn-learns/` and show the training loop. The demos precompute each run once and replay it, so what you see is the real training history.
 - **"Doesn't it get stuck in local minima?"** In 2-D, it can. With billions of knobs, almost every flat-looking spot still has some direction going downhill, so real training rarely gets truly stuck.
 - **"How does it not just memorise?"** It can — that's overfitting (page 1's "w ≈ 5" beat is a mini example). We watch loss on held-out data it never trains on.
 - **"Page 4 learned fast — plain gradient descent?"** No, it uses Adam, a smarter per-knob step rule. The gradients come from the same backprop. Pages 1, 2 and 5 use plain gradient descent.

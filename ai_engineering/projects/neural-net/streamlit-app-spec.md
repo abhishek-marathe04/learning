@@ -1,6 +1,6 @@
 # Spec: "How a Network Learns" — Streamlit teaching app
 
-A live, presenter-first Streamlit app for a 20-minute Devocracy talk on how neural networks learn. Audience: experienced software engineers who use AI assistants daily. The app replaces the three browser demos in the deck and adds two "real PyTorch" moments the HTML demo can't do.
+A live, presenter-first Streamlit app for a 20-minute Devocracy talk on how neural networks learn. Audience: experienced software engineers who use AI assistants daily. The app replaces the three browser demos in the deck and adds two "real PyTorch" moments that the earlier single-file demo couldn't do.
 
 This document is the brief for Claude Code. Build exactly this; where something is unspecified, prefer the simpler option.
 
@@ -8,7 +8,7 @@ This document is the brief for Claude Code. Build exactly this; where something 
 
 ## 1. Why Streamlit, and the one rule that makes it work
 
-**What Streamlit gives us over the HTML demo**
+**What Streamlit gives us over the earlier single-file demo**
 
 - **Real autograd on screen.** The audience sees actual PyTorch compute `w.grad = -800.0`, the same number they just derived by hand on the slides.
 - **Scrubbable training.** Every training run is computed once and stored as snapshots. The presenter drags a "training step" slider backwards and forwards: pause at step 3, rewind to 0, jump to the end.
@@ -296,7 +296,7 @@ A single page with `st.code` showing the core training loop from each of `neuron
 - Launch with `streamlit run app.py --server.headless true`. Open the browser, press F11, and visit every page once to warm up.
 - Test at 1280×720 and 1920×1080 browser sizes; nothing important below the fold on any page.
 - No randomness anywhere without an explicit seed.
-- If anything misbehaves: press Reset on that page and keep talking. **Backup:** `index.html` (the existing single-file demo) is open in a second browser tab.
+- If anything misbehaves: press Reset on that page and keep talking.
 
 ---
 
