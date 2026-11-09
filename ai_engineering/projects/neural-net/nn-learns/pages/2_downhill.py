@@ -4,7 +4,11 @@ Watch the ball roll to the valley floor, and watch a too-big step explode."""
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import base64
+import io
 import time
+from PIL import Image, ImageFilter
+from plotly.colors import sample_colorscale
 from plotly.subplots import make_subplots
 
 from core import neuron
@@ -56,31 +60,89 @@ def arrow(s):
 
 
 @st.cache_data
+def landscape_image(w_rng, b_rng, px=480, levels=12):
+    """The loss landscape as a PNG data URI (Viridis fill + dark contour lines).
+
+    It is a background image rather than a Contour trace on purpose: Plotly
+    wipes contour/heatmap traces when Play runs an animation, while layout
+    images are never touched.
+    """
+    ws = np.linspace(*w_rng, px)
+    bs = np.linspace(*b_rng, px)[::-1]          # row 0 = top = highest b
+    W, B = np.meshgrid(ws, bs)
+    resid = W[..., None] * x + B[..., None] - y
+    Z = np.log10(np.mean(resid ** 2, axis=-1) + 1e-9)
+
+    t = (Z - Z.min()) / (Z.max() - Z.min())
+    lut = np.array([[int(c) for c in rgb[4:-1].split(",")]
+                    for rgb in sample_colorscale("Viridis", np.linspace(0, 1, 256))],
+                   dtype=np.uint8)
+    rgb = lut[(t * 255).astype(int)].astype(float)
+
+    # Thin iso-lines: pixels within ~0.7 px of an evenly spaced level.
+    step = (Z.max() - Z.min()) / levels
+    gy, gx = np.gradient(Z)
+    dist = np.abs(((Z - Z.min()) / step + 0.5) % 1 - 0.5) * step
+    on_line = dist / (np.hypot(gx, gy) + 1e-12) < 0.7
+    rgb[on_line] *= 0.35
+
+    img = Image.fromarray(rgb.astype(np.uint8)).filter(ImageFilter.SMOOTH)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def pick_frames(ws, bs, w_rng, b_rng, n_frames=60, max_jump=0.03):
+    """Snapshot indices for the Play animation, spaced by on-screen distance.
+
+    Snapshots are evenly spaced in training steps, but the ball's speed is
+    not: it jumps to the valley floor, then crawls toward the minimum. Spacing
+    frames evenly by step made long stretches where nothing visibly moved,
+    which looked like the animation had paused. Instead, sample evenly along
+    the path length (in axis-fraction units). Single jumps are capped at
+    `max_jump` so one huge leap does not eat most of the frame budget.
+    """
+    n = len(ws)
+    if n <= n_frames:
+        return list(range(n))
+    dw = np.diff(ws) / (w_rng[1] - w_rng[0])
+    db = np.diff(bs) / (b_rng[1] - b_rng[0])
+    seg = np.minimum(np.hypot(dw, db), max_jump)
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    targets = np.linspace(0.0, cum[-1], n_frames)
+    idx = np.searchsorted(cum, targets, side="left")
+    return sorted(set(int(i) for i in np.clip(idx, 0, n - 1)) | {0, n - 1})
+
+
+@st.cache_data
 def build_combined_figure(snaps_data):
     gw_grid, bw_grid, Z = cached_loss_surface()
+    # Seed every animated trace with the first snapshot. Plotly cannot
+    # animate from an empty trace, so empty starts made traces vanish.
+    s0 = snaps_data[0]
+    n0 = len(snaps_data)
+    m0x, m0y = miss_segments(s0)
+    a0x, a0y = arrow(s0)
     fig = make_subplots(rows=1, cols=2, column_widths=[0.5, 0.5],
                         subplot_titles=("Data and guess", "Loss landscape"),
                         horizontal_spacing=0.09)
 
     fig.add_trace(go.Scatter(x=x, y=y, mode="markers", name="readings",
                              marker=dict(color=INK, size=8)), row=1, col=1)
-    fig.add_trace(go.Scatter(x=[], y=[], mode="lines", name="miss",
+    fig.add_trace(go.Scatter(x=m0x, y=m0y, mode="lines", name="miss",
                              line=dict(color=AMBER, width=1, dash="dot"),
                              showlegend=False), row=1, col=1)
-    fig.add_trace(go.Scatter(x=xline, y=[], mode="lines", name="guess",
+    fig.add_trace(go.Scatter(x=xline, y=model_line(s0), mode="lines", name="guess",
                              line=dict(color=TEAL, width=4)), row=1, col=1)
 
-    fig.add_trace(go.Contour(x=gw_grid, y=bw_grid, z=Z, showscale=False,
-                             colorscale="Viridis", reversescale=False,
-                             contours=dict(coloring="heatmap")), row=1, col=2)
-    fig.add_trace(go.Scatter(x=[], y=[], mode="lines",
+    fig.add_trace(go.Scatter(x=[s0["w"]] * n0, y=[s0["b"]] * n0, mode="lines",
                              line=dict(color="white", width=2), showlegend=False),
                   row=1, col=2)
-    fig.add_trace(go.Scatter(x=[], y=[], mode="markers",
+    fig.add_trace(go.Scatter(x=[s0["w"]], y=[s0["b"]], mode="markers",
                              marker=dict(color="white", size=14,
                                          line=dict(color="black", width=1)),
                              showlegend=False), row=1, col=2)
-    fig.add_trace(go.Scatter(x=[], y=[], mode="lines+markers",
+    fig.add_trace(go.Scatter(x=a0x, y=a0y, mode="lines+markers",
                              line=dict(color=TEAL, width=4),
                              marker=dict(color=TEAL, size=[0, 12], symbol="arrow-up"),
                              showlegend=False), row=1, col=2)
@@ -91,17 +153,42 @@ def build_combined_figure(snaps_data):
     fig.update_yaxes(title_text="b", row=1, col=2)
     fig.update_layout(plotly_layout(height=430, showlegend=False))
 
-    # Animation frames
-    frames = []
+    # Landscape as a background image pinned to the w/b axes (see
+    # landscape_image for why it is not a trace).
+    w_rng = (float(gw_grid.min()), float(gw_grid.max()))
+    b_rng = (float(bw_grid.min()), float(bw_grid.max()))
+    fig.update_xaxes(range=w_rng, autorange=False, showgrid=False,
+                     zeroline=False, row=1, col=2)
+    fig.update_yaxes(range=b_rng, autorange=False, showgrid=False,
+                     zeroline=False, row=1, col=2)
+    fig.add_layout_image(source=landscape_image(w_rng, b_rng),
+                         xref="x2", yref="y2", x=w_rng[0], y=b_rng[1],
+                         sizex=w_rng[1] - w_rng[0], sizey=b_rng[1] - b_rng[0],
+                         sizing="stretch", layer="below")
+
+    # Animation frames.
+    # Smoothness choices (the old version blinked):
+    #  * redraw=False: only the scatter traces move, nothing is re-rendered
+    #    from scratch, so there is no flash between frames.
+    #  * ~60 frames picked by distance travelled (pick_frames), so the ball
+    #    moves at an even pace instead of idling where it barely moves.
+    #  * The trail is padded to a fixed length so Plotly can interpolate it.
+    n = len(snaps_data)
     snaps_ws = np.array([s["w"] for s in snaps_data])
     snaps_bs = np.array([s["b"] for s in snaps_data])
-    for k, s in enumerate(snaps_data):
+    frame_idx = pick_frames(snaps_ws, snaps_bs, w_rng, b_rng)
+
+    frames = []
+    for k in frame_idx:
+        s = snaps_data[k]
         fpx, fpy = miss_segments(s)
         fax, fay = arrow(s)
-        frames.append(go.Frame(name=str(k), traces=[1, 2, 4, 5, 6], data=[
+        trail_w = np.concatenate([snaps_ws[:k + 1], np.full(n - k - 1, snaps_ws[k])])
+        trail_b = np.concatenate([snaps_bs[:k + 1], np.full(n - k - 1, snaps_bs[k])])
+        frames.append(go.Frame(name=str(k), traces=[1, 2, 3, 4, 5], data=[
             go.Scatter(x=fpx, y=fpy),
             go.Scatter(x=xline, y=model_line(s)),
-            go.Scatter(x=snaps_ws[:k + 1], y=snaps_bs[:k + 1]),
+            go.Scatter(x=trail_w, y=trail_b),
             go.Scatter(x=[s["w"]], y=[s["b"]]),
             go.Scatter(x=fax, y=fay),
         ]))
@@ -110,8 +197,9 @@ def build_combined_figure(snaps_data):
     play_button = dict(
         type="buttons", showactive=False, x=0.0, y=1.18, xanchor="left",
         buttons=[dict(label="▶ Play", method="animate",
-                      args=[None, dict(frame=dict(duration=60, redraw=True),
-                                       transition=dict(duration=0), fromcurrent=False)])])
+                      args=[None, dict(frame=dict(duration=160, redraw=False),
+                                       transition=dict(duration=160, easing="linear"),
+                                       mode="immediate", fromcurrent=False)])])
     fig.update_layout(updatemenus=[play_button])
     return fig
 
